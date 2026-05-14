@@ -26,7 +26,7 @@ import { NavSecondary } from "./nav-secondary";
 import { NavUser } from "./nav-user";
 import { NavDocuments } from "./nav-document";
 
-import { GoDotFill } from "react-icons/go";
+
 
 const data = {
   user: {
@@ -34,26 +34,7 @@ const data = {
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  documents: [
-    {
-      name: "Pending",
-      url: "#",
-      icon: GoDotFill,
-      class: "text-red-500",
-    },
-    {
-      name: "Active",
-      url: "#",
-      icon: GoDotFill,
-      class: "text-orange-500",
-    },
-    {
-      name: "Completed",
-      url: "#",
-      icon: GoDotFill,
-      class: "text-green-500",
-    },
-  ],
+  
 
   navMain: [
     {
@@ -112,7 +93,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
+        <NavDocuments  />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

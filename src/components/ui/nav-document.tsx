@@ -1,46 +1,48 @@
 "use client"
 
 
-
 import {
   SidebarGroup,
+  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
 
-  SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
+import { GoDotFill } from "react-icons/go"
 
-export function NavDocuments({
-  items,
-}: {
-  items: {
-    name: string
-    url: string
-    class: string
-    icon: React.ElementType
-  }[]
-}) {
-  const { isMobile } = useSidebar()
-
+export function NavDocuments() {
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Documents</SidebarGroupLabel>
-      <SidebarMenu>
-        {items.map((item) => (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <a href={item.url}>
-                <item.icon className={item.class} />
-                <span>{item.name}</span>
-              </a>
-            </SidebarMenuButton>
-            
-          </SidebarMenuItem>
-        ))}
-        
-      </SidebarMenu>
+    <SidebarGroup>
+      <SidebarGroupLabel>
+        ACTIVE VM
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          <SidebarMenuItem >
+              <div className="flex gap-2 items-center">
+                <GoDotFill className="text-green-500 text-2xl" />
+                12 Runs
+              </div>
+            </SidebarMenuItem>
+        </SidebarMenu>
+        <SidebarMenu>
+          <SidebarMenuItem >
+              <div className="flex gap-2 items-center">
+                <GoDotFill className="text-yellow-500 text-2xl" />
+                12 Runs
+              </div>
+            </SidebarMenuItem>
+        </SidebarMenu>
+        <SidebarMenu>
+          <SidebarMenuItem >
+              <div className="flex gap-2 items-center">
+                <GoDotFill className="text-red-500 text-2xl" />
+                12 Runs
+              </div>
+            </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroupContent>
     </SidebarGroup>
   )
 }

@@ -5,6 +5,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { Aldrich } from "next/font/google";
 
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/ui/app-sidebar";
+import { SiteHeader } from "@/components/dashboard/ui/side-headr";
+
 const aldrich = Aldrich({
   subsets: ["latin"],
   weight: "400",
@@ -20,10 +24,28 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  
   return (
     <html lang="en" className={`${aldrich.className} dark h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <TooltipProvider delayDuration={0}>{children}</TooltipProvider>
+        <TooltipProvider delayDuration={0}>
+          
+            <SidebarProvider
+              style={
+                {
+                  "--sidebar-width": "calc(var(--spacing) * 72)",
+                  "--header-height": "calc(var(--spacing) * 12)",
+                } as React.CSSProperties
+              }
+            >
+              <AppSidebar variant="inset" />
+              <SidebarInset>
+                <SiteHeader />
+                {children}
+              </SidebarInset>
+            </SidebarProvider>
+          
+        </TooltipProvider>
       </body>
     </html>
   );

@@ -1,0 +1,20 @@
+[
+    {
+        "id": 1,
+        "name": "GPU Instance 1",
+        "status": "Running",
+        "power": "250W",
+        "temp": "70°C",
+        "cost": "$0.50/hr",
+        "vram": "16GB"
+    },
+    {
+        "id": 2,
+        "name": "GPU Instance 2",
+        "status": "Idle",
+        "power": "150W",
+        "temp": "40°C",
+        "cost": "$0.30/hr",
+        "vram": "16GB"
+    }
+]
