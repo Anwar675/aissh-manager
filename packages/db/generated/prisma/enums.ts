@@ -9,7 +9,9 @@
 * 🟢 You can import this file directly.
 */
 
+export const SSHAuthType = {
+  PASSWORD: 'PASSWORD',
+  PRIVATE_KEY: 'PRIVATE_KEY'
+} as const
 
-
-// This file is empty because there are no enums in the schema.
-export {}
+export type SSHAuthType = (typeof SSHAuthType)[keyof typeof SSHAuthType]

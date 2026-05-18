@@ -3,6 +3,16 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
+type SSHRemote = {
+  host: string;
+  port: number;
+  username: string;
+
+  password?: string;
+  sshKeyName?: string;
+  passphrase?: string;
+};
+
 export class SSHService {
   private ssh = new NodeSSH();
 
@@ -10,7 +20,13 @@ export class SSHService {
 
   private connecting = false;
 
+  constructor(private remote?: SSHRemote) {}
+
   async connect() {
+    if (!this.remote) {
+      throw new Error("SSH remote configuration is required");
+    }
+
     if (this.connected) {
       return;
     }
@@ -22,52 +38,39 @@ export class SSHService {
     this.connecting = true;
 
     try {
-      const keyPath = path.join(
-        os.homedir(),
-        ".ssh",
-        process.env.SSH_KEY_NAME!
-      );
+      let privateKey: string | undefined;
+
+      if (this.remote?.sshKeyName) {
+        const keyPath = path.join(os.homedir(), ".ssh", this.remote.sshKeyName);
+        console.log("🔑 Loaded SSH private key from", keyPath);
+        privateKey = fs.readFileSync(keyPath, "utf8");
+      }
 
       await this.ssh.connect({
-        host: process.env.GPU_HOST!,
+        host: this.remote.host,
 
-        port: Number(
-          process.env.GPU_PORT!
-        ),
+        port: this.remote.port,
 
-        username:
-          process.env
-            .USERNAME!,
+        username: this.remote.username,
 
-        privateKey:
-          fs.readFileSync(
-            keyPath,
-            "utf8"
-          ),
+        password: this.remote.password,
 
-        passphrase:
-          process.env
-            .SSH_PASSPHRASE,
+        privateKey,
+
+        passphrase: this.remote.passphrase,
 
         readyTimeout: 10000,
       });
 
       this.connected = true;
 
-      console.log(
-        "✅ SSH connected"
-      );
+      console.log("✅ SSH connected");
     } catch (error) {
       this.connected = false;
 
-      console.error(
-        "❌ SSH connection failed:",
-        error
-      );
+      console.error("❌ SSH connection failed:", error);
 
-      throw new Error(
-        "SSH_CONNECTION_FAILED"
-      );
+      throw new Error("SSH_CONNECTION_FAILED");
     } finally {
       this.connecting = false;
     }
@@ -79,47 +82,31 @@ export class SSHService {
     }
 
     try {
-      const result =
-        await this.ssh.execCommand(
-          command
-        );
+      const result = await this.ssh.execCommand(command);
 
       if (result.code !== 0) {
-        throw new Error(
-          result.stderr ||
-            "SSH command failed"
-        );
+        throw new Error(result.stderr || "SSH command failed");
       }
 
       return result.stdout;
     } catch (error) {
-      console.error(
-        "❌ SSH exec error:",
-        error
-      );
+      console.error("❌ SSH exec error:", error);
 
-      // mất connection thì reconnect
       this.connected = false;
 
       await this.connect();
 
-      const retry =
-        await this.ssh.execCommand(
-          command
-        );
+      const retry = await this.ssh.execCommand(command);
 
       return retry.stdout;
     }
   }
 
-  // chỉ gọi khi shutdown app
   disconnect() {
     this.connected = false;
 
     this.ssh.dispose();
 
-    console.log(
-      "🔌 SSH disconnected"
-    );
+    console.log("🔌 SSH disconnected");
   }
 }

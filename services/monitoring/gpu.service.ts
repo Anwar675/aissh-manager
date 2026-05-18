@@ -1,4 +1,4 @@
-import { sshService } from "../ssh";
+import { SSHService } from "../ssh/ssh.service";
 
 export type GPUMetric = {
   name: string;
@@ -9,11 +9,18 @@ export type GPUMetric = {
   utilization: number;
 };
 
-export async function getGpuMetrics(): Promise<
-  GPUMetric[]
-> {
-  const stdout =
-    await sshService.exec(`
+export async function getGpuMetrics(remote: {
+  host: string;
+  port: number;
+  username: string;
+
+  sshKeyName?: string;
+  passphrase?: string;
+  password?: string;
+}): Promise<GPUMetric[]> {
+  const ssh = new SSHService(remote);
+
+  const stdout = await ssh.exec(`
       nvidia-smi \
       --query-gpu=name,memory.used,memory.total,temperature.gpu,power.draw,utilization.gpu \
       --format=csv,noheader,nounits
@@ -23,37 +30,21 @@ export async function getGpuMetrics(): Promise<
     .trim()
     .split("\n")
     .map((line) => {
-      const [
-        name,
-        memoryUsed,
-        memoryTotal,
-        temperature,
-        power,
-        utilization,
-      ] = line.split(",");
+      const [name, memoryUsed, memoryTotal, temperature, power, utilization] =
+        line.split(",");
 
       return {
         name: name.trim(),
 
-        memoryUsed: Number(
-          memoryUsed.trim()
-        ),
+        memoryUsed: Number(memoryUsed.trim()),
 
-        memoryTotal: Number(
-          memoryTotal.trim()
-        ),
+        memoryTotal: Number(memoryTotal.trim()),
 
-        temperature: Number(
-          temperature.trim()
-        ),
+        temperature: Number(temperature.trim()),
 
-        power: Number(
-          power.trim()
-        ),
+        power: Number(power.trim()),
 
-        utilization: Number(
-          utilization.trim()
-        ),
+        utilization: Number(utilization.trim()),
       };
     });
 }

@@ -1,63 +1,56 @@
 "use client";
 
 import * as React from "react";
-import { IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 
 interface Connection {
   id: string;
+
   name: string;
-  environment: string;
-  host: string;
-  port: string;
-  username: string;
-  password?: string;
-  privateKeyPath?: string;
   description?: string;
+
+  host: string;
+  port: number;
+  username: string;
+
+  password?: string;
+  sshKeyName?: string;
+  passphrase?: string;
+
   createdAt: string;
 }
-
-const ENV_OPTIONS = [
-  { value: "development", label: "Development" },
-  { value: "staging", label: "Staging" },
-  { value: "production", label: "Production" },
-  { value: "testing", label: "Testing" },
-];
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+
   onCreate: (connection: Connection) => void;
 };
 
 export function CreateSSHDialog({ open, onOpenChange, onCreate }: Props) {
   const [formData, setFormData] = React.useState({
     name: "",
-    environment: "development",
+
     host: "",
     port: "22",
     username: "",
+
+    sshKeyName: "",
+    passphrase: "",
     password: "",
-    privateKeyPath: "",
+
     description: "",
   });
 
@@ -82,40 +75,84 @@ export function CreateSSHDialog({ open, onOpenChange, onCreate }: Props) {
       newErrors.username = "Username is required";
     }
 
+    // phải có password hoặc ssh key
+    if (!formData.password.trim() && !formData.sshKeyName.trim()) {
+      newErrors.auth = "Password or SSH key name is required";
+    }
+
     setErrors(newErrors);
 
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  
 
-    if (!validateForm()) return;
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    const newConnection: Connection = {
-      ...formData,
-      id: Date.now().toString(),
-      createdAt: new Date().toLocaleString(),
+      if (!validateForm()) {
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/ssh", {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            name: formData.name,
+
+            description: formData.description,
+
+            host: formData.host,
+
+            port: Number(formData.port),
+
+            username: formData.username,
+
+            password: formData.password || null,
+
+            sshKeyName: formData.sshKeyName || null,
+
+            passphrase: formData.passphrase || null,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to create connection");
+        }
+
+        const data = await response.json();
+
+        onCreate(data);
+
+        toast.success(`Connection "${data.name}" created`);
+
+        setFormData({
+          name: "",
+          host: "",
+          port: "22",
+          username: "",
+          sshKeyName: "",
+          passphrase: "",
+          password: "",
+          description: "",
+        });
+
+        setErrors({});
+
+        onOpenChange(false);
+      } catch (error) {
+        console.error(error);
+
+        toast.error("Failed to save connection");
+      }
     };
 
-    onCreate(newConnection);
-
-    toast.success(`Connection "${newConnection.name}" created`);
-
-    setFormData({
-      name: "",
-      environment: "development",
-      host: "",
-      port: "22",
-      username: "",
-      password: "",
-      privateKeyPath: "",
-      description: "",
-    });
-
-    setErrors({});
-    onOpenChange(false);
-  };
+   
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -127,66 +164,62 @@ export function CreateSSHDialog({ open, onOpenChange, onCreate }: Props) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Name</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-              />
-              {errors.name && (
-                <p className="text-sm text-red-500">{errors.name}</p>
-              )}
-            </div>
-
-            <div>
-              <Label>Environment</Label>
-
-              <Select
-                value={formData.environment}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    environment: value,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-
-                <SelectContent>
-                  {ENV_OPTIONS.map((env) => (
-                    <SelectItem key={env.value} value={env.value}>
-                      {env.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
+          {/* Name */}
           <div>
-            <Label>Host</Label>
+            <Label>Connection Name</Label>
+
             <Input
-              value={formData.host}
+              placeholder="vast-ai-a100"
+              value={formData.name}
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  host: e.target.value,
+                  name: e.target.value,
                 }))
               }
             />
+
+            {errors.name && (
+              <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Username</Label>
+
+              <Input
+                placeholder="root"
+                value={formData.username}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    username: e.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div>
+              <Label>Host</Label>
+
+              <Input
+                placeholder="1.2.3.4"
+                value={formData.host}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    host: e.target.value,
+                  }))
+                }
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Port</Label>
+
               <Input
                 value={formData.port}
                 onChange={(e) =>
@@ -199,17 +232,68 @@ export function CreateSSHDialog({ open, onOpenChange, onCreate }: Props) {
             </div>
 
             <div>
-              <Label>Username</Label>
+              <Label>SSH Key Name</Label>
+
               <Input
-                value={formData.username}
+                placeholder="vast-ai"
+                value={formData.sshKeyName}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    username: e.target.value,
+                    sshKeyName: e.target.value,
                   }))
                 }
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Password</Label>
+
+              <Input
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    password: e.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div>
+              <Label>Passphrase</Label>
+
+              <Input
+                type="password"
+                value={formData.passphrase}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    passphrase: e.target.value,
+                  }))
+                }
+              />
+            </div>
+          </div>
+
+          {errors.auth && <p className="text-sm text-red-500">{errors.auth}</p>}
+
+          <div>
+            <Label>Description</Label>
+
+            <Input
+              placeholder="VastAI A100 server"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

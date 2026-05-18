@@ -20,6 +20,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useRouter } from "next/navigation";
 import {
   IconChevronDown,
   IconChevronLeft,
@@ -30,6 +31,7 @@ import {
   IconGripVertical,
   IconLayoutColumns,
   IconPlus,
+  IconServer,
 } from "@tabler/icons-react";
 import {
   flexRender,
@@ -63,7 +65,6 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import * as Dialog from "@radix-ui/react-dialog";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -72,7 +73,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -91,22 +91,31 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SiBunnydotnet } from "react-icons/si";
 import { GoDotFill } from "react-icons/go";
 import { CreateSSHDialog } from "./create";
 
 export const schema = z.object({
-  id: z.number(),
+  id: z.string(),
   name: z.string(),
+  description: z.string(),
+  host: z.string(),
+  port: z.number(),
+  username: z.string(),
+  authType: z.string(),
+  provider: z.string(),
   status: z.string(),
-  power: z.string(),
-  temp: z.string(),
-  cost: z.string(),
-  vram: z.string().optional(),
+  isActive: z.boolean(),
+  createdAt: z.string(),
 });
 
+type VirtualMachine = z.infer<typeof schema>;
 
-function DragHandle({ id }: { id: number }) {
+const sortActiveFirst = (items: VirtualMachine[]) =>
+  [...items].sort(
+    (first, second) => Number(second.isActive) - Number(first.isActive),
+  );
+
+function DragHandle({ id }: { id: string }) {
   const { attributes, listeners } = useSortable({
     id,
   });
@@ -125,7 +134,45 @@ function DragHandle({ id }: { id: number }) {
   );
 }
 
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
+const formatAuthType = (authType: string) =>
+  authType === "PRIVATE_KEY" ? "Private key" : "Password";
+
+const formatDate = (value: string) =>
+  new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+
+const getStatusDotClassName = (item: VirtualMachine) => {
+  if (item.status === "Not available") {
+    return "text-red-600";
+  }
+
+  if (item.status === "Connecting") {
+    return "text-yellow-500";
+  }
+
+  return item.isActive ? "text-green-600" : "text-zinc-400";
+};
+
+const getStatusBadgeClassName = (item: VirtualMachine) =>
+  item.status === "Not available"
+    ? "border-red-500/40 bg-red-500/10 px-1.5 text-red-600"
+    : "px-1.5 text-muted-foreground";
+
+type TableActions = {
+  connectingIds: Set<string>;
+  deletingIds: Set<string>;
+  onConnect: (item: VirtualMachine) => void;
+  onDelete: (item: VirtualMachine) => void;
+};
+
+const createColumns = ({
+  connectingIds,
+  deletingIds,
+  onConnect,
+  onDelete,
+}: TableActions): ColumnDef<VirtualMachine>[] => [
   {
     id: "drag",
     header: () => null,
@@ -158,106 +205,78 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "Name",
+    accessorKey: "name",
     header: "Name",
     cell: ({ row }) => {
-      return <TableCellViewer item={row.original} />;
+      return (
+        <TableCellViewer
+          item={row.original}
+          isConnecting={connectingIds.has(row.original.id)}
+          isDeleting={deletingIds.has(row.original.id)}
+          onConnect={onConnect}
+          onDelete={onDelete}
+        />
+      );
     },
     enableHiding: false,
   },
   {
-    accessorKey: "VRAM",
-    header: "VRAM",
+    accessorKey: "host",
+    header: "Host",
     cell: ({ row }) => (
-      <div className="w-32">
-        <Badge variant="outline" className="px-1.5 text-muted-foreground">
-          {row.original.vram}
-        </Badge>
+      <div className="font-mono text-sm text-muted-foreground">
+        {row.original.host}
       </div>
+    ),
+  },
+  {
+    accessorKey: "port",
+    header: () => <div className="w-full text-right">Port</div>,
+    cell: ({ row }) => (
+      <div className="text-right font-mono text-sm">{row.original.port}</div>
+    ),
+  },
+  {
+    accessorKey: "username",
+    header: "User",
+    cell: ({ row }) => (
+      <Badge variant="outline" className="px-1.5 text-muted-foreground">
+        {row.original.username}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: "authType",
+    header: "Auth",
+    cell: ({ row }) => (
+      <Badge variant="outline" className="px-1.5 text-muted-foreground">
+        {formatAuthType(row.original.authType)}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: "provider",
+    header: "Provider",
+    cell: ({ row }) => (
+      <span className="capitalize">{row.original.provider}</span>
     ),
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge variant="outline" className="px-1.5 text-muted-foreground">
-        <GoDotFill className="text-green-600" />
+      <Badge
+        variant="outline"
+        className={getStatusBadgeClassName(row.original)}
+      >
+        <GoDotFill className={getStatusDotClassName(row.original)} />
         {row.original.status}
       </Badge>
     ),
   },
   {
-    accessorKey: "Power",
-    header: () => <div className="w-full text-right">Power</div>,
-    cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            loading: `Saving ${row.original.name}`,
-            success: "Done",
-            error: "Error",
-          });
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-target`} className="sr-only">
-          Power
-        </Label>
-        <Input
-          className="h-8 w-16 border-transparent bg-transparent text-right shadow-none hover:bg-input/30 focus-visible:border focus-visible:bg-background dark:bg-transparent dark:hover:bg-input/30 dark:focus-visible:bg-input/30"
-          defaultValue={row.original.power}
-          id={`${row.original.id}-target`}
-        />
-      </form>
-    ),
-  },
-  {
-    accessorKey: "Temp",
-    header: () => <div className="w-full text-right">Temp</div>,
-    cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            loading: `Saving ${row.original.name}`,
-            success: "Done",
-            error: "Error",
-          });
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-limit`} className="sr-only">
-          Temp
-        </Label>
-        <Input
-          className="h-8 w-16 border-transparent bg-transparent text-right shadow-none hover:bg-input/30 focus-visible:border focus-visible:bg-background dark:bg-transparent dark:hover:bg-input/30 dark:focus-visible:bg-input/30"
-          defaultValue={row.original.temp}
-          id={`${row.original.id}-limit`}
-        />
-      </form>
-    ),
-  },
-  {
-    accessorKey: "Cost",
-    header: "Cost",
-    cell: ({ row }) => {
-      const isAssigned = row.original.cost !== "Assign reviewer";
-
-      if (isAssigned) {
-        return row.original.cost;
-      }
-
-      return (
-        <>
-          <Label htmlFor={`${row.original.id}-reviewer`} className="sr-only">
-            Cost
-          </Label>
-        </>
-      );
-    },
-  },
-  {
     id: "actions",
-    cell: () => (
+    cell: ({ row }) => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -271,17 +290,30 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-32">
           <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>Make a copy</DropdownMenuItem>
-          <DropdownMenuItem>Favorite</DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={
+              connectingIds.has(row.original.id) ||
+              deletingIds.has(row.original.id)
+            }
+            onClick={() => onConnect(row.original)}
+          >
+            {connectingIds.has(row.original.id) ? "Connecting" : "Connect"}
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+          <DropdownMenuItem
+            variant="destructive"
+            disabled={deletingIds.has(row.original.id)}
+            onClick={() => onDelete(row.original)}
+          >
+            {deletingIds.has(row.original.id) ? "Deleting" : "Delete"}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     ),
   },
 ];
 
-function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
+function DraggableRow({ row }: { row: Row<VirtualMachine> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
     id: row.original.id,
   });
@@ -306,12 +338,9 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
   );
 }
 
-export function DataTable({
-  data: initialData,
-}: {
-  data: z.infer<typeof schema>[];
-}) {
-  const [data, setData] = React.useState(() => initialData);
+export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
+  const router = useRouter();
+  const [data, setData] = React.useState(() => sortActiveFirst(initialData));
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -319,6 +348,12 @@ export function DataTable({
     [],
   );
   const [isOpen, setIsOpen] = React.useState(false);
+  const [connectingIds, setConnectingIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  const [deletingIds, setDeletingIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
@@ -335,6 +370,155 @@ export function DataTable({
   const dataIds = React.useMemo<UniqueIdentifier[]>(
     () => data?.map(({ id }) => id) || [],
     [data],
+  );
+
+  React.useEffect(() => {
+    setData(sortActiveFirst(initialData));
+  }, [initialData]);
+
+  const handleConnect = React.useCallback(
+    async (item: VirtualMachine) => {
+      setConnectingIds((current) => new Set(current).add(item.id));
+      setData((current) =>
+        current.map((machine) =>
+          machine.id === item.id
+            ? {
+                ...machine,
+                status: "Connecting",
+              }
+            : machine,
+        ),
+      );
+
+      try {
+        const response = await fetch(
+          `/api/ssh/${encodeURIComponent(item.id)}/connect`,
+          {
+            method: "POST",
+          },
+        );
+
+        const payload = await response.json();
+
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.error ?? "Not available");
+        }
+
+        setData((current) =>
+          sortActiveFirst(
+            current.map((machine) =>
+              machine.id === item.id
+                ? {
+                    ...machine,
+                    isActive: true,
+                    status: "Active",
+                  }
+                : {
+                    ...machine,
+                    isActive: false,
+                    status:
+                      machine.status === "Not available"
+                        ? "Not available"
+                        : "Saved",
+                  },
+            ),
+          ),
+        );
+
+        toast.success(`Connected to ${item.name}`);
+        router.push(`/dashboard/${item.id}`);
+        router.refresh();
+      } catch (error) {
+        setData((current) =>
+          current.map((machine) =>
+            machine.id === item.id
+              ? {
+                  ...machine,
+                  isActive: false,
+                  status: "Not available",
+                }
+              : machine,
+          ),
+        );
+
+        toast.error(
+          error instanceof Error ? error.message : "Machine not available",
+        );
+      } finally {
+        setConnectingIds((current) => {
+          const next = new Set(current);
+          next.delete(item.id);
+          return next;
+        });
+      }
+    },
+    [router],
+  );
+
+  const handleDelete = React.useCallback(
+    async (item: VirtualMachine) => {
+      const confirmed = window.confirm(
+        `Delete SSH connection "${item.name}"? This cannot be undone.`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      setDeletingIds((current) => new Set(current).add(item.id));
+
+      try {
+        const response = await fetch(
+          `/api/ssh/${encodeURIComponent(item.id)}`,
+          {
+            method: "DELETE",
+          },
+        );
+        const payload = await response.json();
+
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.error ?? "Failed to delete SSH connection");
+        }
+
+        setData((current) =>
+          sortActiveFirst(current.filter((machine) => machine.id !== item.id)),
+        );
+        setRowSelection((current) => {
+          const next = {
+            ...current,
+          } as Record<string, boolean>;
+          delete next[item.id];
+          return next;
+        });
+
+        toast.success(`Deleted ${item.name}`);
+        router.refresh();
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to delete SSH connection",
+        );
+      } finally {
+        setDeletingIds((current) => {
+          const next = new Set(current);
+          next.delete(item.id);
+          return next;
+        });
+      }
+    },
+    [router],
+  );
+
+  const columns = React.useMemo(
+    () =>
+      createColumns({
+        connectingIds,
+        deletingIds,
+        onConnect: handleConnect,
+        onDelete: handleDelete,
+      }),
+    [connectingIds, deletingIds, handleConnect, handleDelete],
   );
 
   const table = useReactTable({
@@ -368,7 +552,7 @@ export function DataTable({
       setData((data) => {
         const oldIndex = dataIds.indexOf(active.id);
         const newIndex = dataIds.indexOf(over.id);
-        return arrayMove(data, oldIndex, newIndex);
+        return sortActiveFirst(arrayMove(data, oldIndex, newIndex));
       });
     }
   }
@@ -379,20 +563,42 @@ export function DataTable({
       className="w-full flex-col py-4 justify-start gap-6"
     >
       <div className="flex items-center justify-between px-4 lg:px-6">
-       
+        <CreateSSHDialog
+          open={isOpen}
+          onOpenChange={setIsOpen}
+          onCreate={(connection) => {
+            setData((current) =>
+              sortActiveFirst([
+                {
+                  id: connection.id,
+                  name: connection.name,
+                  description: connection.description ?? "",
+                  host: connection.host,
+                  port: connection.port,
+                  username: connection.username,
+                  authType: connection.password ? "PASSWORD" : "PRIVATE_KEY",
+                  provider: "local",
+                  status: "Saved",
+                  isActive: false,
+                  createdAt: connection.createdAt,
+                },
+                ...current,
+              ]),
+            );
+          }}
+        />
         <Label htmlFor="view-selector" className="sr-only">
           View
         </Label>
-        <SiBunnydotnet className="size-9 ml-5" />
+        <IconServer className="size-9 ml-5" />
         <TabsList className="hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="outline">Outline</TabsTrigger>
-          <TabsTrigger value="past-performance">
-            Past Performance <Badge variant="secondary">3</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="key-personnel">
-            Key Personnel <Badge variant="secondary">2</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="focus-documents">Focus Documents</TabsTrigger>
+          <TabsTrigger value="outline">All machines</TabsTrigger>
+          <Badge variant="secondary">
+            {data.filter((item) => item.isActive).length} active
+          </Badge>
+          <Badge variant="secondary">
+            {data.filter((item) => !item.isActive).length} saved
+          </Badge>
         </TabsList>
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -567,26 +773,23 @@ export function DataTable({
           </div>
         </div>
       </TabsContent>
-      <TabsContent
-        value="past-performance"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-      <TabsContent value="key-personnel" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-      <TabsContent
-        value="focus-documents"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
     </Tabs>
   );
 }
 
-function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
+function TableCellViewer({
+  item,
+  isConnecting,
+  isDeleting,
+  onConnect,
+  onDelete,
+}: {
+  item: VirtualMachine;
+  isConnecting: boolean;
+  isDeleting: boolean;
+  onConnect: (item: VirtualMachine) => void;
+  onDelete: (item: VirtualMachine) => void;
+}) {
   const isMobile = useIsMobile();
 
   return (
@@ -604,8 +807,18 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               <div className="flex-1">
                 <DrawerTitle className="text-lg">{item.name}</DrawerTitle>
                 <div className="flex items-center gap-2 mt-1">
-                  <GoDotFill className="text-green-600 size-2" />
-                  <span className="text-xs text-muted-foreground">Running</span>
+                  <GoDotFill
+                    className={`${getStatusDotClassName(item)} size-2`}
+                  />
+                  <span
+                    className={`text-xs ${
+                      item.status === "Not available"
+                        ? "text-red-600"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {item.status}
+                  </span>
                 </div>
               </div>
               <DrawerClose asChild>
@@ -618,88 +831,97 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
-            {/* Live Metrics */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-foreground">
-                LIVE METRICS
+                CONNECTION
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">VRAM</span>
-                  <span className="font-medium">{item.vram}</span>
+                  <span className="text-muted-foreground">Host</span>
+                  <span className="font-mono text-xs">{item.host}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">UTIL</span>
-                  <span className="font-medium">94%</span>
+                  <span className="text-muted-foreground">Port</span>
+                  <span className="font-mono text-xs">{item.port}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">TEMP</span>
-                  <span className="font-medium">{item.temp}</span>
+                  <span className="text-muted-foreground">Username</span>
+                  <span className="font-medium">{item.username}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">POWER</span>
-                  <span className="font-medium">{item.power}</span>
+                  <span className="text-muted-foreground">Auth</span>
+                  <span className="font-medium">
+                    {formatAuthType(item.authType)}
+                  </span>
                 </div>
               </div>
             </div>
 
             <Separator />
 
-            {/* Cost */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">COST</h3>
+              <h3 className="text-sm font-semibold text-foreground">DETAILS</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Hourly Rate</span>
-                  <span className="font-medium">{item.cost}</span>
+                  <span className="text-muted-foreground">Provider</span>
+                  <span className="font-medium capitalize">
+                    {item.provider}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Spent</span>
-                  <span className="font-medium">$1.21</span>
+                  <span className="text-muted-foreground">Created</span>
+                  <span className="font-medium">
+                    {formatDate(item.createdAt)}
+                  </span>
                 </div>
               </div>
             </div>
 
             <Separator />
 
-            {/* Machine Info */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-foreground">
-                MACHINE INFO
+                DESCRIPTION
               </h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">CUDA</span>
-                  <span className="font-medium">12.8</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">RAM</span>
-                  <span className="font-medium">32GB</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">CPU</span>
-                  <span className="font-medium">16 cores</span>
-                </div>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                {item.description || "No description"}
+              </p>
             </div>
           </div>
 
-          {/* Actions */}
           <div className="border-t p-4 space-y-3">
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" className="text-xs">
-                SSH
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                disabled={isConnecting || isDeleting}
+                onClick={() => onConnect(item)}
+              >
+                {isConnecting ? "Connecting" : "Connect"}
               </Button>
               <Button variant="outline" size="sm" className="text-xs">
-                Jupyter
+                Metrics
               </Button>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" className="text-xs">
-                Restart
+              <Button
+                onClick={() => onConnect(item)}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                disabled={isConnecting || isDeleting}
+              >
+                {item.isActive ? "Active" : "Set active"}
               </Button>
-              <Button variant="destructive" size="sm" className="text-xs">
-                Stop
+              <Button
+                variant="destructive"
+                size="sm"
+                className="text-xs"
+                disabled={isDeleting}
+                onClick={() => onDelete(item)}
+              >
+                {isDeleting ? "Deleting" : "Delete"}
               </Button>
             </div>
           </div>
