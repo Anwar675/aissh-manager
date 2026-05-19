@@ -27,6 +27,12 @@ model SSHRemote {
 
   isActive Boolean @default(false)
 
+  pricePerHour   Float?
+  currency       String    @default("USD")
+  usageStartedAt DateTime?
+  usageEndedAt   DateTime?
+  connectedAt    DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

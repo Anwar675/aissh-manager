@@ -28,6 +28,7 @@ interface Connection {
   password?: string;
   sshKeyName?: string;
   passphrase?: string;
+  pricePerHour?: number | null;
 
   createdAt: string;
 }
@@ -52,6 +53,7 @@ export function CreateSSHDialog({ open, onOpenChange, onCreate }: Props) {
     password: "",
 
     description: "",
+    pricePerHour: "",
   });
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -78,6 +80,15 @@ export function CreateSSHDialog({ open, onOpenChange, onCreate }: Props) {
     // phải có password hoặc ssh key
     if (!formData.password.trim() && !formData.sshKeyName.trim()) {
       newErrors.auth = "Password or SSH key name is required";
+    }
+
+    const pricePerHour =
+      formData.pricePerHour.trim() === ""
+        ? null
+        : Number(formData.pricePerHour);
+
+    if (pricePerHour !== null && (!Number.isFinite(pricePerHour) || pricePerHour < 0)) {
+      newErrors.pricePerHour = "Valid price is required";
     }
 
     setErrors(newErrors);
@@ -118,6 +129,11 @@ export function CreateSSHDialog({ open, onOpenChange, onCreate }: Props) {
             sshKeyName: formData.sshKeyName || null,
 
             passphrase: formData.passphrase || null,
+
+            pricePerHour:
+              formData.pricePerHour.trim() === ""
+                ? null
+                : Number(formData.pricePerHour),
           }),
         });
 
@@ -140,6 +156,7 @@ export function CreateSSHDialog({ open, onOpenChange, onCreate }: Props) {
           passphrase: "",
           password: "",
           description: "",
+          pricePerHour: "",
         });
 
         setErrors({});
@@ -294,6 +311,28 @@ export function CreateSSHDialog({ open, onOpenChange, onCreate }: Props) {
                 }))
               }
             />
+          </div>
+
+          <div>
+            <Label>Price/hour</Label>
+
+            <Input
+              inputMode="decimal"
+              placeholder="0.50"
+              value={formData.pricePerHour}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  pricePerHour: e.target.value,
+                }))
+              }
+            />
+
+            {errors.pricePerHour && (
+              <p className="text-sm text-red-500 mt-1">
+                {errors.pricePerHour}
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

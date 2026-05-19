@@ -28,10 +28,12 @@ export type AggregateSSHRemote = {
 
 export type SSHRemoteAvgAggregateOutputType = {
   port: number | null
+  pricePerHour: number | null
 }
 
 export type SSHRemoteSumAggregateOutputType = {
   port: number | null
+  pricePerHour: number | null
 }
 
 export type SSHRemoteMinAggregateOutputType = {
@@ -47,6 +49,11 @@ export type SSHRemoteMinAggregateOutputType = {
   passphrase: string | null
   provider: string | null
   isActive: boolean | null
+  pricePerHour: number | null
+  currency: string | null
+  usageStartedAt: Date | null
+  usageEndedAt: Date | null
+  connectedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -64,6 +71,11 @@ export type SSHRemoteMaxAggregateOutputType = {
   passphrase: string | null
   provider: string | null
   isActive: boolean | null
+  pricePerHour: number | null
+  currency: string | null
+  usageStartedAt: Date | null
+  usageEndedAt: Date | null
+  connectedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -81,6 +93,11 @@ export type SSHRemoteCountAggregateOutputType = {
   passphrase: number
   provider: number
   isActive: number
+  pricePerHour: number
+  currency: number
+  usageStartedAt: number
+  usageEndedAt: number
+  connectedAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -89,10 +106,12 @@ export type SSHRemoteCountAggregateOutputType = {
 
 export type SSHRemoteAvgAggregateInputType = {
   port?: true
+  pricePerHour?: true
 }
 
 export type SSHRemoteSumAggregateInputType = {
   port?: true
+  pricePerHour?: true
 }
 
 export type SSHRemoteMinAggregateInputType = {
@@ -108,6 +127,11 @@ export type SSHRemoteMinAggregateInputType = {
   passphrase?: true
   provider?: true
   isActive?: true
+  pricePerHour?: true
+  currency?: true
+  usageStartedAt?: true
+  usageEndedAt?: true
+  connectedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -125,6 +149,11 @@ export type SSHRemoteMaxAggregateInputType = {
   passphrase?: true
   provider?: true
   isActive?: true
+  pricePerHour?: true
+  currency?: true
+  usageStartedAt?: true
+  usageEndedAt?: true
+  connectedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -142,6 +171,11 @@ export type SSHRemoteCountAggregateInputType = {
   passphrase?: true
   provider?: true
   isActive?: true
+  pricePerHour?: true
+  currency?: true
+  usageStartedAt?: true
+  usageEndedAt?: true
+  connectedAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -246,6 +280,11 @@ export type SSHRemoteGroupByOutputType = {
   passphrase: string | null
   provider: string | null
   isActive: boolean
+  pricePerHour: number | null
+  currency: string
+  usageStartedAt: Date | null
+  usageEndedAt: Date | null
+  connectedAt: Date | null
   createdAt: Date
   updatedAt: Date
   _count: SSHRemoteCountAggregateOutputType | null
@@ -286,6 +325,11 @@ export type SSHRemoteWhereInput = {
   passphrase?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
   provider?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
   isActive?: Prisma.BoolFilter<"SSHRemote"> | boolean
+  pricePerHour?: Prisma.FloatNullableFilter<"SSHRemote"> | number | null
+  currency?: Prisma.StringFilter<"SSHRemote"> | string
+  usageStartedAt?: Prisma.DateTimeNullableFilter<"SSHRemote"> | Date | string | null
+  usageEndedAt?: Prisma.DateTimeNullableFilter<"SSHRemote"> | Date | string | null
+  connectedAt?: Prisma.DateTimeNullableFilter<"SSHRemote"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"SSHRemote"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"SSHRemote"> | Date | string
 }
@@ -303,6 +347,11 @@ export type SSHRemoteOrderByWithRelationInput = {
   passphrase?: Prisma.SortOrderInput | Prisma.SortOrder
   provider?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  pricePerHour?: Prisma.SortOrderInput | Prisma.SortOrder
+  currency?: Prisma.SortOrder
+  usageStartedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  usageEndedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  connectedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -323,6 +372,11 @@ export type SSHRemoteWhereUniqueInput = Prisma.AtLeast<{
   passphrase?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
   provider?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
   isActive?: Prisma.BoolFilter<"SSHRemote"> | boolean
+  pricePerHour?: Prisma.FloatNullableFilter<"SSHRemote"> | number | null
+  currency?: Prisma.StringFilter<"SSHRemote"> | string
+  usageStartedAt?: Prisma.DateTimeNullableFilter<"SSHRemote"> | Date | string | null
+  usageEndedAt?: Prisma.DateTimeNullableFilter<"SSHRemote"> | Date | string | null
+  connectedAt?: Prisma.DateTimeNullableFilter<"SSHRemote"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"SSHRemote"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"SSHRemote"> | Date | string
 }, "id">
@@ -340,6 +394,11 @@ export type SSHRemoteOrderByWithAggregationInput = {
   passphrase?: Prisma.SortOrderInput | Prisma.SortOrder
   provider?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  pricePerHour?: Prisma.SortOrderInput | Prisma.SortOrder
+  currency?: Prisma.SortOrder
+  usageStartedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  usageEndedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  connectedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.SSHRemoteCountOrderByAggregateInput
@@ -365,6 +424,11 @@ export type SSHRemoteScalarWhereWithAggregatesInput = {
   passphrase?: Prisma.StringNullableWithAggregatesFilter<"SSHRemote"> | string | null
   provider?: Prisma.StringNullableWithAggregatesFilter<"SSHRemote"> | string | null
   isActive?: Prisma.BoolWithAggregatesFilter<"SSHRemote"> | boolean
+  pricePerHour?: Prisma.FloatNullableWithAggregatesFilter<"SSHRemote"> | number | null
+  currency?: Prisma.StringWithAggregatesFilter<"SSHRemote"> | string
+  usageStartedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"SSHRemote"> | Date | string | null
+  usageEndedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"SSHRemote"> | Date | string | null
+  connectedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"SSHRemote"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"SSHRemote"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"SSHRemote"> | Date | string
 }
@@ -382,6 +446,11 @@ export type SSHRemoteCreateInput = {
   passphrase?: string | null
   provider?: string | null
   isActive?: boolean
+  pricePerHour?: number | null
+  currency?: string
+  usageStartedAt?: Date | string | null
+  usageEndedAt?: Date | string | null
+  connectedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -399,6 +468,11 @@ export type SSHRemoteUncheckedCreateInput = {
   passphrase?: string | null
   provider?: string | null
   isActive?: boolean
+  pricePerHour?: number | null
+  currency?: string
+  usageStartedAt?: Date | string | null
+  usageEndedAt?: Date | string | null
+  connectedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -416,6 +490,11 @@ export type SSHRemoteUpdateInput = {
   passphrase?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pricePerHour?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  usageStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  usageEndedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -433,6 +512,11 @@ export type SSHRemoteUncheckedUpdateInput = {
   passphrase?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pricePerHour?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  usageStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  usageEndedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -450,6 +534,11 @@ export type SSHRemoteCreateManyInput = {
   passphrase?: string | null
   provider?: string | null
   isActive?: boolean
+  pricePerHour?: number | null
+  currency?: string
+  usageStartedAt?: Date | string | null
+  usageEndedAt?: Date | string | null
+  connectedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -467,6 +556,11 @@ export type SSHRemoteUpdateManyMutationInput = {
   passphrase?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pricePerHour?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  usageStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  usageEndedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -484,6 +578,11 @@ export type SSHRemoteUncheckedUpdateManyInput = {
   passphrase?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pricePerHour?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  usageStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  usageEndedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -501,12 +600,18 @@ export type SSHRemoteCountOrderByAggregateInput = {
   passphrase?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  pricePerHour?: Prisma.SortOrder
+  currency?: Prisma.SortOrder
+  usageStartedAt?: Prisma.SortOrder
+  usageEndedAt?: Prisma.SortOrder
+  connectedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type SSHRemoteAvgOrderByAggregateInput = {
   port?: Prisma.SortOrder
+  pricePerHour?: Prisma.SortOrder
 }
 
 export type SSHRemoteMaxOrderByAggregateInput = {
@@ -522,6 +627,11 @@ export type SSHRemoteMaxOrderByAggregateInput = {
   passphrase?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  pricePerHour?: Prisma.SortOrder
+  currency?: Prisma.SortOrder
+  usageStartedAt?: Prisma.SortOrder
+  usageEndedAt?: Prisma.SortOrder
+  connectedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -539,12 +649,18 @@ export type SSHRemoteMinOrderByAggregateInput = {
   passphrase?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  pricePerHour?: Prisma.SortOrder
+  currency?: Prisma.SortOrder
+  usageStartedAt?: Prisma.SortOrder
+  usageEndedAt?: Prisma.SortOrder
+  connectedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type SSHRemoteSumOrderByAggregateInput = {
   port?: Prisma.SortOrder
+  pricePerHour?: Prisma.SortOrder
 }
 
 export type StringFieldUpdateOperationsInput = {
@@ -571,6 +687,18 @@ export type BoolFieldUpdateOperationsInput = {
   set?: boolean
 }
 
+export type NullableFloatFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null
+}
+
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
@@ -590,6 +718,11 @@ export type SSHRemoteSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   passphrase?: boolean
   provider?: boolean
   isActive?: boolean
+  pricePerHour?: boolean
+  currency?: boolean
+  usageStartedAt?: boolean
+  usageEndedAt?: boolean
+  connectedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["sSHRemote"]>
@@ -607,6 +740,11 @@ export type SSHRemoteSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   passphrase?: boolean
   provider?: boolean
   isActive?: boolean
+  pricePerHour?: boolean
+  currency?: boolean
+  usageStartedAt?: boolean
+  usageEndedAt?: boolean
+  connectedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["sSHRemote"]>
@@ -624,6 +762,11 @@ export type SSHRemoteSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   passphrase?: boolean
   provider?: boolean
   isActive?: boolean
+  pricePerHour?: boolean
+  currency?: boolean
+  usageStartedAt?: boolean
+  usageEndedAt?: boolean
+  connectedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["sSHRemote"]>
@@ -641,11 +784,16 @@ export type SSHRemoteSelectScalar = {
   passphrase?: boolean
   provider?: boolean
   isActive?: boolean
+  pricePerHour?: boolean
+  currency?: boolean
+  usageStartedAt?: boolean
+  usageEndedAt?: boolean
+  connectedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type SSHRemoteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "host" | "port" | "username" | "authType" | "password" | "privateKey" | "passphrase" | "provider" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["sSHRemote"]>
+export type SSHRemoteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "host" | "port" | "username" | "authType" | "password" | "privateKey" | "passphrase" | "provider" | "isActive" | "pricePerHour" | "currency" | "usageStartedAt" | "usageEndedAt" | "connectedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["sSHRemote"]>
 
 export type $SSHRemotePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "SSHRemote"
@@ -663,6 +811,11 @@ export type $SSHRemotePayload<ExtArgs extends runtime.Types.Extensions.InternalA
     passphrase: string | null
     provider: string | null
     isActive: boolean
+    pricePerHour: number | null
+    currency: string
+    usageStartedAt: Date | null
+    usageEndedAt: Date | null
+    connectedAt: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["sSHRemote"]>
@@ -1100,6 +1253,11 @@ export interface SSHRemoteFieldRefs {
   readonly passphrase: Prisma.FieldRef<"SSHRemote", 'String'>
   readonly provider: Prisma.FieldRef<"SSHRemote", 'String'>
   readonly isActive: Prisma.FieldRef<"SSHRemote", 'Boolean'>
+  readonly pricePerHour: Prisma.FieldRef<"SSHRemote", 'Float'>
+  readonly currency: Prisma.FieldRef<"SSHRemote", 'String'>
+  readonly usageStartedAt: Prisma.FieldRef<"SSHRemote", 'DateTime'>
+  readonly usageEndedAt: Prisma.FieldRef<"SSHRemote", 'DateTime'>
+  readonly connectedAt: Prisma.FieldRef<"SSHRemote", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"SSHRemote", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"SSHRemote", 'DateTime'>
 }

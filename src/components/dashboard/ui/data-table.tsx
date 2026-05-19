@@ -58,6 +58,15 @@ import { Button } from "@/components/ui/button";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
   Drawer,
   DrawerClose,
   DrawerContent,
@@ -93,6 +102,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GoDotFill } from "react-icons/go";
 import { CreateSSHDialog } from "./create";
+import {
+  formatDate,
+  formatDuration,
+  getBillingEnd,
+  getHourlyPriceLabel,
+  getTotalCostLabel,
+  getUsageStart,
+} from "@/lib/billing";
 
 export const schema = z.object({
   id: z.string(),
@@ -106,9 +123,28 @@ export const schema = z.object({
   status: z.string(),
   isActive: z.boolean(),
   createdAt: z.string(),
+  cost: z.string().optional().nullable(),
+  pricePerHour: z.number().optional().nullable(),
+  currency: z.string().optional().nullable(),
+  usageStartedAt: z.string().optional().nullable(),
+  usageEndedAt: z.string().optional().nullable(),
+  connectedAt: z.string().optional().nullable(),
 });
 
 type VirtualMachine = z.infer<typeof schema>;
+
+type EditSSHValues = {
+  name: string;
+  description: string;
+  host: string;
+  port: number;
+  username: string;
+  provider: string;
+  pricePerHour: string;
+  password: string;
+  sshKeyName: string;
+  passphrase: string;
+};
 
 const sortActiveFirst = (items: VirtualMachine[]) =>
   [...items].sort(
@@ -137,18 +173,12 @@ function DragHandle({ id }: { id: string }) {
 const formatAuthType = (authType: string) =>
   authType === "PRIVATE_KEY" ? "Private key" : "Password";
 
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-
 const getStatusDotClassName = (item: VirtualMachine) => {
   if (item.status === "Not available") {
     return "text-red-600";
   }
 
-  if (item.status === "Connecting") {
+  if (item.status === "Connecting" || item.status === "Stopping") {
     return "text-yellow-500";
   }
 
@@ -163,15 +193,21 @@ const getStatusBadgeClassName = (item: VirtualMachine) =>
 type TableActions = {
   connectingIds: Set<string>;
   deletingIds: Set<string>;
+  stoppingIds: Set<string>;
   onConnect: (item: VirtualMachine) => void;
   onDelete: (item: VirtualMachine) => void;
+  onEdit: (item: VirtualMachine) => void;
+  onStop: (item: VirtualMachine) => void;
 };
 
 const createColumns = ({
   connectingIds,
   deletingIds,
+  stoppingIds,
   onConnect,
   onDelete,
+  onEdit,
+  onStop,
 }: TableActions): ColumnDef<VirtualMachine>[] => [
   {
     id: "drag",
@@ -213,8 +249,11 @@ const createColumns = ({
           item={row.original}
           isConnecting={connectingIds.has(row.original.id)}
           isDeleting={deletingIds.has(row.original.id)}
+          isStopping={stoppingIds.has(row.original.id)}
           onConnect={onConnect}
           onDelete={onDelete}
+          onEdit={onEdit}
+          onStop={onStop}
         />
       );
     },
@@ -289,7 +328,9 @@ const createColumns = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onEdit(row.original)}>
+            Edit
+          </DropdownMenuItem>
           <DropdownMenuItem
             disabled={
               connectingIds.has(row.original.id) ||
@@ -298,6 +339,16 @@ const createColumns = ({
             onClick={() => onConnect(row.original)}
           >
             {connectingIds.has(row.original.id) ? "Connecting" : "Connect"}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={
+              stoppingIds.has(row.original.id) ||
+              deletingIds.has(row.original.id) ||
+              !row.original.isActive
+            }
+            onClick={() => onStop(row.original)}
+          >
+            {stoppingIds.has(row.original.id) ? "Stopping" : "Stop"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -338,6 +389,281 @@ function DraggableRow({ row }: { row: Row<VirtualMachine> }) {
   );
 }
 
+function EditSSHDialog({
+  item,
+  onOpenChange,
+  onSave,
+}: {
+  item: VirtualMachine;
+  onOpenChange: (open: boolean) => void;
+  onSave: (item: VirtualMachine, values: EditSSHValues) => Promise<void>;
+}) {
+  const [formData, setFormData] = React.useState({
+    name: item.name,
+    host: item.host,
+    port: String(item.port),
+    username: item.username,
+    provider: item.provider,
+    pricePerHour:
+      typeof item.pricePerHour === "number" ? String(item.pricePerHour) : "",
+    password: "",
+    sshKeyName: "",
+    passphrase: "",
+    description: item.description,
+  });
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    const nextErrors: Record<string, string> = {};
+    const port = Number(formData.port);
+
+    if (!formData.name.trim()) {
+      nextErrors.name = "Connection name is required";
+    }
+
+    if (!formData.host.trim()) {
+      nextErrors.host = "Host is required";
+    }
+
+    if (!formData.username.trim()) {
+      nextErrors.username = "Username is required";
+    }
+
+    if (!Number.isInteger(port) || port <= 0) {
+      nextErrors.port = "Valid port is required";
+    }
+
+    const pricePerHour =
+      formData.pricePerHour.trim() === ""
+        ? null
+        : Number(formData.pricePerHour);
+
+    if (pricePerHour !== null && (!Number.isFinite(pricePerHour) || pricePerHour < 0)) {
+      nextErrors.pricePerHour = "Valid price is required";
+    }
+
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      await onSave(item, {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        host: formData.host.trim(),
+        port,
+        username: formData.username.trim(),
+        provider: formData.provider.trim(),
+        pricePerHour: formData.pricePerHour.trim(),
+        password: formData.password,
+        sshKeyName: formData.sshKeyName,
+        passphrase: formData.passphrase,
+      });
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update connection",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit SSH Connection</DialogTitle>
+          <DialogDescription>Update machine connection details</DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label>Connection Name</Label>
+            <Input
+              value={formData.name}
+              onChange={(event) =>
+                setFormData((current) => ({
+                  ...current,
+                  name: event.target.value,
+                }))
+              }
+            />
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Username</Label>
+              <Input
+                value={formData.username}
+                onChange={(event) =>
+                  setFormData((current) => ({
+                    ...current,
+                    username: event.target.value,
+                  }))
+                }
+              />
+              {errors.username && (
+                <p className="mt-1 text-sm text-red-500">{errors.username}</p>
+              )}
+            </div>
+
+            <div>
+              <Label>Host</Label>
+              <Input
+                value={formData.host}
+                onChange={(event) =>
+                  setFormData((current) => ({
+                    ...current,
+                    host: event.target.value,
+                  }))
+                }
+              />
+              {errors.host && (
+                <p className="mt-1 text-sm text-red-500">{errors.host}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Port</Label>
+              <Input
+                value={formData.port}
+                onChange={(event) =>
+                  setFormData((current) => ({
+                    ...current,
+                    port: event.target.value,
+                  }))
+                }
+              />
+              {errors.port && (
+                <p className="mt-1 text-sm text-red-500">{errors.port}</p>
+              )}
+            </div>
+
+            <div>
+              <Label>Provider</Label>
+              <Input
+                value={formData.provider}
+                onChange={(event) =>
+                  setFormData((current) => ({
+                    ...current,
+                    provider: event.target.value,
+                  }))
+                }
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>Price/hour</Label>
+            <Input
+              inputMode="decimal"
+              placeholder="0.50"
+              value={formData.pricePerHour}
+              onChange={(event) =>
+                setFormData((current) => ({
+                  ...current,
+                  pricePerHour: event.target.value,
+                }))
+              }
+            />
+            {errors.pricePerHour && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.pricePerHour}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Password</Label>
+              <Input
+                type="password"
+                placeholder="Leave blank to keep current"
+                value={formData.password}
+                onChange={(event) =>
+                  setFormData((current) => ({
+                    ...current,
+                    password: event.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div>
+              <Label>SSH Key Name</Label>
+              <Input
+                placeholder="Leave blank to keep current"
+                value={formData.sshKeyName}
+                onChange={(event) =>
+                  setFormData((current) => ({
+                    ...current,
+                    sshKeyName: event.target.value,
+                  }))
+                }
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>Passphrase</Label>
+            <Input
+              type="password"
+              placeholder="Leave blank to keep current"
+              value={formData.passphrase}
+              onChange={(event) =>
+                setFormData((current) => ({
+                  ...current,
+                  passphrase: event.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label>Description</Label>
+            <Input
+              value={formData.description}
+              onChange={(event) =>
+                setFormData((current) => ({
+                  ...current,
+                  description: event.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSaving}
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? "Saving" : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
   const router = useRouter();
   const [data, setData] = React.useState(() => sortActiveFirst(initialData));
@@ -353,6 +679,12 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
   );
   const [deletingIds, setDeletingIds] = React.useState<Set<string>>(
     () => new Set(),
+  );
+  const [stoppingIds, setStoppingIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  const [editingItem, setEditingItem] = React.useState<VirtualMachine | null>(
+    null,
   );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [pagination, setPagination] = React.useState({
@@ -404,6 +736,8 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
           throw new Error(payload.error ?? "Not available");
         }
 
+        const connectedAt = new Date().toISOString();
+
         setData((current) =>
           sortActiveFirst(
             current.map((machine) =>
@@ -412,15 +746,11 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
                     ...machine,
                     isActive: true,
                     status: "Active",
+                    connectedAt,
+                    usageStartedAt: connectedAt,
+                    usageEndedAt: null,
                   }
-                : {
-                    ...machine,
-                    isActive: false,
-                    status:
-                      machine.status === "Not available"
-                        ? "Not available"
-                        : "Saved",
-                  },
+                : machine,
             ),
           ),
         );
@@ -510,15 +840,133 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
     [router],
   );
 
+  const handleEdit = React.useCallback(
+    async (item: VirtualMachine, values: EditSSHValues) => {
+      const response = await fetch(`/api/ssh/${encodeURIComponent(item.id)}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error ?? "Failed to update SSH connection");
+      }
+
+      setData((current) =>
+        sortActiveFirst(
+          current.map((machine) =>
+            machine.id === item.id
+              ? {
+                  ...machine,
+                  ...payload.data,
+                }
+              : machine,
+          ),
+        ),
+      );
+
+      toast.success(`Updated ${values.name}`);
+      router.refresh();
+    },
+    [router],
+  );
+
+  const handleStop = React.useCallback(
+    async (item: VirtualMachine) => {
+      setStoppingIds((current) => new Set(current).add(item.id));
+      setData((current) =>
+        current.map((machine) =>
+          machine.id === item.id
+            ? {
+                ...machine,
+                status: "Stopping",
+              }
+            : machine,
+        ),
+      );
+
+      try {
+        const response = await fetch(
+          `/api/ssh/${encodeURIComponent(item.id)}/stop`,
+          {
+            method: "POST",
+          },
+        );
+        const payload = await response.json();
+
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.error ?? "Failed to stop SSH connection");
+        }
+
+        const usageEndedAt = new Date().toISOString();
+
+        setData((current) =>
+          sortActiveFirst(
+            current.map((machine) =>
+              machine.id === item.id
+                ? {
+                    ...machine,
+                    isActive: false,
+                    status: "Saved",
+                    usageEndedAt,
+                  }
+                : machine,
+            ),
+          ),
+        );
+
+        toast.success(`Stopped ${item.name}`);
+        router.refresh();
+      } catch (error) {
+        setData((current) =>
+          current.map((machine) =>
+            machine.id === item.id
+              ? {
+                  ...machine,
+                  status: machine.isActive ? "Active" : "Saved",
+                }
+              : machine,
+          ),
+        );
+
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to stop SSH connection",
+        );
+      } finally {
+        setStoppingIds((current) => {
+          const next = new Set(current);
+          next.delete(item.id);
+          return next;
+        });
+      }
+    },
+    [router],
+  );
+
   const columns = React.useMemo(
     () =>
       createColumns({
         connectingIds,
         deletingIds,
+        stoppingIds,
         onConnect: handleConnect,
         onDelete: handleDelete,
+        onEdit: setEditingItem,
+        onStop: handleStop,
       }),
-    [connectingIds, deletingIds, handleConnect, handleDelete],
+    [
+      connectingIds,
+      deletingIds,
+      stoppingIds,
+      handleConnect,
+      handleDelete,
+      handleStop,
+    ],
   );
 
   const table = useReactTable({
@@ -580,6 +1028,11 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
                   provider: "local",
                   status: "Saved",
                   isActive: false,
+                  pricePerHour: connection.pricePerHour ?? null,
+                  currency: "USD",
+                  usageStartedAt: null,
+                  usageEndedAt: null,
+                  connectedAt: null,
                   createdAt: connection.createdAt,
                 },
                 ...current,
@@ -587,6 +1040,18 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
             );
           }}
         />
+        {editingItem ? (
+          <EditSSHDialog
+            key={editingItem.id}
+            item={editingItem}
+            onOpenChange={(open) => {
+              if (!open) {
+                setEditingItem(null);
+              }
+            }}
+            onSave={handleEdit}
+          />
+        ) : null}
         <Label htmlFor="view-selector" className="sr-only">
           View
         </Label>
@@ -781,16 +1246,23 @@ function TableCellViewer({
   item,
   isConnecting,
   isDeleting,
+  isStopping,
   onConnect,
   onDelete,
+  onEdit,
+  onStop,
 }: {
   item: VirtualMachine;
   isConnecting: boolean;
   isDeleting: boolean;
+  isStopping: boolean;
   onConnect: (item: VirtualMachine) => void;
   onDelete: (item: VirtualMachine) => void;
+  onEdit: (item: VirtualMachine) => void;
+  onStop: (item: VirtualMachine) => void;
 }) {
   const isMobile = useIsMobile();
+  const billingDate = React.useMemo(() => new Date(), []);
 
   return (
     <Drawer direction={isMobile ? "bottom" : "right"}>
@@ -881,6 +1353,37 @@ function TableCellViewer({
 
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-foreground">
+                BILLING
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Price/hour</span>
+                  <span className="font-medium">
+                    {getHourlyPriceLabel(item)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Usage time</span>
+                  <span className="font-medium">
+                    {formatDuration(
+                      getUsageStart(item),
+                      getBillingEnd(item, billingDate),
+                    )}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Total cost</span>
+                  <span className="font-semibold">
+                    {getTotalCostLabel(item, billingDate)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">
                 DESCRIPTION
               </h3>
               <p className="text-sm text-muted-foreground">
@@ -900,25 +1403,31 @@ function TableCellViewer({
               >
                 {isConnecting ? "Connecting" : "Connect"}
               </Button>
-              <Button variant="outline" size="sm" className="text-xs">
-                Metrics
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                disabled={!item.isActive || isStopping || isDeleting}
+                onClick={() => onStop(item)}
+              >
+                {isStopping ? "Stopping" : "Stop"}
               </Button>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Button
-                onClick={() => onConnect(item)}
+                onClick={() => onEdit(item)}
                 variant="outline"
                 size="sm"
                 className="text-xs"
-                disabled={isConnecting || isDeleting}
+                disabled={isConnecting || isDeleting || isStopping}
               >
-                {item.isActive ? "Active" : "Set active"}
+                Edit
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
                 className="text-xs"
-                disabled={isDeleting}
+                disabled={isDeleting || isStopping}
                 onClick={() => onDelete(item)}
               >
                 {isDeleting ? "Deleting" : "Delete"}

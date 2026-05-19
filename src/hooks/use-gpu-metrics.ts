@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
 
 type GPUMetric = {
   name: string;
@@ -11,15 +12,13 @@ type GPUMetric = {
   utilization: number;
 };
 
-async function fetchGpuMetrics(): Promise<
-  GPUMetric[]
-> {
-  const res = await fetch(
-    "/api/metrics/gpu",
-    {
-      cache: "no-store",
-    }
-  );
+async function fetchGpuMetrics(sshId?: string): Promise<GPUMetric[]> {
+  const endpoint = sshId
+    ? `/api/metrics/gpu?sshId=${encodeURIComponent(sshId)}`
+    : "/api/metrics/gpu";
+  const res = await fetch(endpoint, {
+    cache: "no-store",
+  });
 
   const json = await res.json();
 
@@ -35,10 +34,13 @@ async function fetchGpuMetrics(): Promise<
 }
 
 export function useGpuMetrics() {
-  const query = useQuery({
-    queryKey: ["gpu-metrics"],
+  const params = useParams<{ dasboardId?: string }>();
+  const sshId = params.dasboardId;
 
-    queryFn: fetchGpuMetrics,
+  const query = useQuery({
+    queryKey: ["gpu-metrics", sshId],
+
+    queryFn: () => fetchGpuMetrics(sshId),
 
     refetchInterval: (query) =>
       query.state.error

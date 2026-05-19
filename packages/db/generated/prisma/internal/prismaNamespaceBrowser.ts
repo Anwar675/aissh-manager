@@ -83,6 +83,11 @@ export const SSHRemoteScalarFieldEnum = {
   passphrase: 'passphrase',
   provider: 'provider',
   isActive: 'isActive',
+  pricePerHour: 'pricePerHour',
+  currency: 'currency',
+  usageStartedAt: 'usageStartedAt',
+  usageEndedAt: 'usageEndedAt',
+  connectedAt: 'connectedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

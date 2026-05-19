@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "../../../../../../packages/db/src";
-import { SSHService } from "../../../../../../services/ssh/ssh.service";
+import {
+  connectSSHSession,
+  disconnectSSHSession,
+} from "../../../../../../services/ssh/ssh-session-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +33,7 @@ export async function POST(
       );
     }
 
-    const ssh = new SSHService({
+    await connectSSHSession(remote.id, {
       host: remote.host,
       port: remote.port,
       username: remote.username,
@@ -40,26 +43,24 @@ export async function POST(
     });
 
     try {
-      await ssh.connect();
-    } finally {
-      ssh.disconnect();
-    }
+      const connectedAt = new Date();
 
-    await prisma.$transaction([
-      prisma.sSHRemote.updateMany({
-        data: {
-          isActive: false,
-        },
-      }),
-      prisma.sSHRemote.update({
+      await prisma.sSHRemote.update({
         where: {
           id: sshId,
         },
         data: {
           isActive: true,
+          connectedAt,
+          usageStartedAt: connectedAt,
+          usageEndedAt: null,
         },
-      }),
-    ]);
+      });
+    } catch (error) {
+      disconnectSSHSession(remote.id);
+
+      throw error;
+    }
 
     return NextResponse.json({
       success: true,

@@ -1,6 +1,71 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
+import * as React from "react";
+
+import {
+  formatDuration,
+  getBillingEnd,
+  getHourlyPriceLabel,
+  getTotalCostLabel,
+  getUsageStart,
+  type BillingSource,
+} from "@/lib/billing";
 import { LineHeader } from "./line-header";
 
+type ActiveSSHRemote = BillingSource & {
+  id: string;
+  name: string;
+  status: string;
+  isActive: boolean;
+};
+
+async function fetchActiveSSHRemote(sshId?: string): Promise<ActiveSSHRemote> {
+  if (!sshId) {
+    throw new Error("Missing SSH id");
+  }
+
+  const response = await fetch(`/api/ssh/${encodeURIComponent(sshId)}`, {
+    cache: "no-store",
+  });
+  const payload = await response.json();
+
+  if (!response.ok || !payload.success) {
+    throw new Error(payload.error ?? "Failed to load SSH connection");
+  }
+
+  return payload.data;
+}
+
 export default function JobPanel() {
+  const params = useParams<{ dasboardId?: string }>();
+  const sshId = params.dasboardId;
+  const [billingDate, setBillingDate] = React.useState(() => new Date());
+
+  React.useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setBillingDate(new Date());
+    }, 30000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  const { data: activeRemote } = useQuery({
+    queryKey: ["ssh-billing", sshId],
+    queryFn: () => fetchActiveSSHRemote(sshId),
+    enabled: Boolean(sshId),
+    refetchInterval: 30000,
+    retry: false,
+  });
+
+  const billingEnd = activeRemote
+    ? getBillingEnd(activeRemote, billingDate)
+    : billingDate;
+  const usageTime = activeRemote
+    ? formatDuration(getUsageStart(activeRemote), billingEnd)
+    : "Not available";
+
   return (
     <div className="overflow-hidden ">
       <div className="flex flex-1">
@@ -16,9 +81,9 @@ export default function JobPanel() {
               <span className="animate-pulse rounded border border-[rgba(63,185,80,0.3)] bg-[rgba(63,185,80,0.15)] px-[7px] py-[2px] text-sm tracking-[0.05em] text-[#3fb950]">
                 ● RUNNING
               </span>
-
+                
               <span className="text-[12px] font-semibold tracking-[0.05em] text-[#e6edf3]">
-                TTS_LORA_EP5
+                {activeRemote?.name ?? "TTS_LORA_EP5"}
               </span>
 
               <span className="ml-auto text-sm text-[#484f58]">
@@ -53,19 +118,23 @@ export default function JobPanel() {
 
               <div className="border-r border-[#21262d] px-3 py-2">
                 <p className="mb-[3px] text-[9px] uppercase tracking-[0.08em] text-[#484f58]">
-                  LR
+                  Price/hr
                 </p>
 
-                <p className="text-[12px] font-semibold text-[#8b949e]">1e-5</p>
+                <p className="text-[12px] font-semibold text-[#8b949e]">
+                  {activeRemote ? getHourlyPriceLabel(activeRemote) : "Not set"}
+                </p>
               </div>
 
               <div className="px-3 py-2">
                 <p className="mb-[3px] text-[9px] uppercase tracking-[0.08em] text-[#484f58]">
-                  Step
+                  Total price
                 </p>
 
                 <p className="text-[12px] font-semibold text-[#8b949e]">
-                  4,512
+                  {activeRemote
+                    ? getTotalCostLabel(activeRemote, billingDate)
+                    : "Not available"}
                 </p>
               </div>
             </div>
@@ -150,7 +219,7 @@ export default function JobPanel() {
               </button>
 
               <span className="ml-auto text-sm text-[#484f58]">
-                steps/s: <span className="text-[#8b949e]">3.2</span>
+                usage: <span className="text-[#8b949e]">{usageTime}</span>
               </span>
             </div>
           </div>

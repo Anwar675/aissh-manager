@@ -38,6 +38,21 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const pricePerHour =
+      body.pricePerHour === null || body.pricePerHour === undefined || body.pricePerHour === ""
+        ? null
+        : Number(body.pricePerHour);
+
+    if (pricePerHour !== null && (!Number.isFinite(pricePerHour) || pricePerHour < 0)) {
+      return NextResponse.json(
+        {
+          error: "Invalid price per hour",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
 
     const connection = await prisma.sSHRemote.create({
       data: {
@@ -50,6 +65,7 @@ export async function POST(req: Request) {
         passphrase: body.passphrase,
         privateKey: body.sshKeyName,
         authType: body.password ? "PASSWORD" : "PRIVATE_KEY",
+        pricePerHour,
       },
     });
     
@@ -67,4 +83,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

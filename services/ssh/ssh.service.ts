@@ -22,6 +22,10 @@ export class SSHService {
 
   constructor(private remote?: SSHRemote) {}
 
+  isConnected() {
+    return this.connected;
+  }
+
   async connect() {
     if (!this.remote) {
       throw new Error("SSH remote configuration is required");
@@ -52,13 +56,9 @@ export class SSHService {
         port: this.remote.port,
 
         username: this.remote.username,
-
         password: this.remote.password,
-
         privateKey,
-
         passphrase: this.remote.passphrase,
-
         readyTimeout: 10000,
       });
 
@@ -91,11 +91,8 @@ export class SSHService {
       return result.stdout;
     } catch (error) {
       console.error("❌ SSH exec error:", error);
-
       this.connected = false;
-
-      await this.connect();
-
+      await this.connect();                                                                      
       const retry = await this.ssh.execCommand(command);
 
       return retry.stdout;
@@ -104,9 +101,7 @@ export class SSHService {
 
   disconnect() {
     this.connected = false;
-
     this.ssh.dispose();
-
     console.log("🔌 SSH disconnected");
   }
 }

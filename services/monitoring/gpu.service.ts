@@ -9,26 +9,17 @@ export type GPUMetric = {
   utilization: number;
 };
 
-export async function getGpuMetrics(remote: {
-  host: string;
-  port: number;
-  username: string;
-
-  sshKeyName?: string;
-  passphrase?: string;
-  password?: string;
-}): Promise<GPUMetric[]> {
-  const ssh = new SSHService(remote);
-
-  const stdout = await ssh.exec(`
+const GPU_METRICS_COMMAND = `
       nvidia-smi \
       --query-gpu=name,memory.used,memory.total,temperature.gpu,power.draw,utilization.gpu \
       --format=csv,noheader,nounits
-    `);
+    `;
 
+function parseGpuMetrics(stdout: string): GPUMetric[] {
   return stdout
     .trim()
     .split("\n")
+    .filter(Boolean)
     .map((line) => {
       const [name, memoryUsed, memoryTotal, temperature, power, utilization] =
         line.split(",");
@@ -47,4 +38,30 @@ export async function getGpuMetrics(remote: {
         utilization: Number(utilization.trim()),
       };
     });
+}
+
+export async function getGpuMetricsFromSSH(
+  ssh: Pick<SSHService, "exec">,
+): Promise<GPUMetric[]> {
+  const stdout = await ssh.exec(GPU_METRICS_COMMAND);
+
+  return parseGpuMetrics(stdout);
+}
+
+export async function getGpuMetrics(remote: {
+  host: string;
+  port: number;
+  username: string;
+
+  sshKeyName?: string;
+  passphrase?: string;
+  password?: string;
+}): Promise<GPUMetric[]> {
+  const ssh = new SSHService(remote);
+
+  try {
+    return await getGpuMetricsFromSSH(ssh);
+  } finally {
+    ssh.disconnect();
+  }
 }
