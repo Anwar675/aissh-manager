@@ -23,7 +23,12 @@ model SSHRemote {
   privateKey String?
   passphrase String?
 
-  provider String? // vast-ai, runpod, local
+  provider String? // vast-ai, runpod, lambda-labs, tensordock, azure, aws, local
+  machineType String? // Selected VM type/size for display, billing, and provider metadata
+
+  // Provider-specific identifiers
+  instanceId     String? // Instance ID from provider (Vast AI job ID, RunPod Pod ID, etc)
+  providerApiKey String? // API key for provider (encrypted in production)
 
   isActive Boolean @default(false)
 

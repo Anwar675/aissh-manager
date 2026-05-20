@@ -110,6 +110,8 @@ import {
   getTotalCostLabel,
   getUsageStart,
 } from "@/lib/billing";
+import { useDisplayCurrency } from "@/hooks/use-display-currency";
+import { getVmTypeLabel } from "@/lib/vm-types";
 
 export const schema = z.object({
   id: z.string(),
@@ -120,6 +122,8 @@ export const schema = z.object({
   username: z.string(),
   authType: z.string(),
   provider: z.string(),
+  instanceId: z.string().optional().nullable(),
+  machineType: z.string(),
   status: z.string(),
   isActive: z.boolean(),
   createdAt: z.string(),
@@ -140,6 +144,8 @@ type EditSSHValues = {
   port: number;
   username: string;
   provider: string;
+  instanceId: string;
+  machineType: string;
   pricePerHour: string;
   password: string;
   sshKeyName: string;
@@ -193,20 +199,24 @@ const getStatusBadgeClassName = (item: VirtualMachine) =>
 type TableActions = {
   connectingIds: Set<string>;
   deletingIds: Set<string>;
+  startingIds: Set<string>;
   stoppingIds: Set<string>;
   onConnect: (item: VirtualMachine) => void;
   onDelete: (item: VirtualMachine) => void;
   onEdit: (item: VirtualMachine) => void;
+  onStart: (item: VirtualMachine) => void;
   onStop: (item: VirtualMachine) => void;
 };
 
 const createColumns = ({
   connectingIds,
   deletingIds,
+  startingIds,
   stoppingIds,
   onConnect,
   onDelete,
   onEdit,
+  onStart,
   onStop,
 }: TableActions): ColumnDef<VirtualMachine>[] => [
   {
@@ -249,10 +259,12 @@ const createColumns = ({
           item={row.original}
           isConnecting={connectingIds.has(row.original.id)}
           isDeleting={deletingIds.has(row.original.id)}
+          isStarting={startingIds.has(row.original.id)}
           isStopping={stoppingIds.has(row.original.id)}
           onConnect={onConnect}
           onDelete={onDelete}
           onEdit={onEdit}
+          onStart={onStart}
           onStop={onStop}
         />
       );
@@ -301,6 +313,13 @@ const createColumns = ({
     ),
   },
   {
+    accessorKey: "machineType",
+    header: "Type",
+    cell: ({ row }) => (
+      <span>{getVmTypeLabel(row.original.provider, row.original.machineType)}</span>
+    ),
+  },
+  {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
@@ -343,12 +362,24 @@ const createColumns = ({
           <DropdownMenuItem
             disabled={
               stoppingIds.has(row.original.id) ||
+              startingIds.has(row.original.id) ||
               deletingIds.has(row.original.id) ||
               !row.original.isActive
             }
             onClick={() => onStop(row.original)}
           >
             {stoppingIds.has(row.original.id) ? "Stopping" : "Stop"}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={
+              startingIds.has(row.original.id) ||
+              stoppingIds.has(row.original.id) ||
+              deletingIds.has(row.original.id) ||
+              row.original.isActive
+            }
+            onClick={() => onStart(row.original)}
+          >
+            {startingIds.has(row.original.id) ? "Starting" : "Start"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -404,6 +435,8 @@ function EditSSHDialog({
     port: String(item.port),
     username: item.username,
     provider: item.provider,
+    instanceId: item.instanceId ?? "",
+    machineType: item.machineType ?? "",
     pricePerHour:
       typeof item.pricePerHour === "number" ? String(item.pricePerHour) : "",
     password: "",
@@ -461,6 +494,8 @@ function EditSSHDialog({
         port,
         username: formData.username.trim(),
         provider: formData.provider.trim(),
+        instanceId: formData.instanceId.trim(),
+        machineType: formData.machineType.trim(),
         pricePerHour: formData.pricePerHour.trim(),
         password: formData.password,
         sshKeyName: formData.sshKeyName,
@@ -564,6 +599,34 @@ function EditSSHDialog({
                 }
               />
             </div>
+          </div>
+
+          <div>
+            <Label>Provider Instance ID</Label>
+            <Input
+              placeholder="Pod ID, instance ID, machine ID, or ResourceGroup:VM"
+              value={formData.instanceId}
+              onChange={(event) =>
+                setFormData((current) => ({
+                  ...current,
+                  instanceId: event.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <Label>Machine Type</Label>
+            <Input
+              placeholder="Filled from provider API"
+              value={formData.machineType}
+              onChange={(event) =>
+                setFormData((current) => ({
+                  ...current,
+                  machineType: event.target.value,
+                }))
+              }
+            />
           </div>
 
           <div>
@@ -678,6 +741,9 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
     () => new Set(),
   );
   const [deletingIds, setDeletingIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  const [startingIds, setStartingIds] = React.useState<Set<string>>(
     () => new Set(),
   );
   const [stoppingIds, setStoppingIds] = React.useState<Set<string>>(
@@ -948,23 +1014,103 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
     [router],
   );
 
+  const handleStart = React.useCallback(
+    async (item: VirtualMachine) => {
+      setStartingIds((current) => new Set(current).add(item.id));
+      setData((current) =>
+        current.map((machine) =>
+          machine.id === item.id
+            ? {
+                ...machine,
+                status: "Starting",
+              }
+            : machine,
+        ),
+      );
+
+      try {
+        const response = await fetch(
+          `/api/ssh/${encodeURIComponent(item.id)}/start`,
+          {
+            method: "POST",
+          },
+        );
+        const payload = await response.json();
+
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.error ?? "Failed to start SSH connection");
+        }
+
+        const usageStartedAt =
+          payload.data?.usageStartedAt ?? new Date().toISOString();
+
+        setData((current) =>
+          sortActiveFirst(
+            current.map((machine) =>
+              machine.id === item.id
+                ? {
+                    ...machine,
+                    isActive: true,
+                    status: "Active",
+                    usageStartedAt,
+                    usageEndedAt: null,
+                  }
+                : machine,
+            ),
+          ),
+        );
+
+        toast.success(`Started ${item.name}`);
+        router.refresh();
+      } catch (error) {
+        setData((current) =>
+          current.map((machine) =>
+            machine.id === item.id
+              ? {
+                  ...machine,
+                  status: machine.isActive ? "Active" : "Saved",
+                }
+              : machine,
+          ),
+        );
+
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to start SSH connection",
+        );
+      } finally {
+        setStartingIds((current) => {
+          const next = new Set(current);
+          next.delete(item.id);
+          return next;
+        });
+      }
+    },
+    [router],
+  );
+
   const columns = React.useMemo(
     () =>
       createColumns({
         connectingIds,
         deletingIds,
+        startingIds,
         stoppingIds,
         onConnect: handleConnect,
         onDelete: handleDelete,
         onEdit: setEditingItem,
+        onStart: handleStart,
         onStop: handleStop,
       }),
     [
       connectingIds,
       deletingIds,
+      startingIds,
       stoppingIds,
       handleConnect,
       handleDelete,
+      handleStart,
       handleStop,
     ],
   );
@@ -1025,7 +1171,9 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
                   port: connection.port,
                   username: connection.username,
                   authType: connection.password ? "PASSWORD" : "PRIVATE_KEY",
-                  provider: "local",
+                  provider: connection.provider ?? "local",
+                  instanceId: connection.instanceId ?? null,
+                  machineType: connection.machineType ?? "",
                   status: "Saved",
                   isActive: false,
                   pricePerHour: connection.pricePerHour ?? null,
@@ -1246,23 +1394,28 @@ function TableCellViewer({
   item,
   isConnecting,
   isDeleting,
+  isStarting,
   isStopping,
   onConnect,
   onDelete,
   onEdit,
+  onStart,
   onStop,
 }: {
   item: VirtualMachine;
   isConnecting: boolean;
   isDeleting: boolean;
+  isStarting: boolean;
   isStopping: boolean;
   onConnect: (item: VirtualMachine) => void;
   onDelete: (item: VirtualMachine) => void;
   onEdit: (item: VirtualMachine) => void;
+  onStart: (item: VirtualMachine) => void;
   onStop: (item: VirtualMachine) => void;
 }) {
   const isMobile = useIsMobile();
   const billingDate = React.useMemo(() => new Date(), []);
+  const { displayCurrency, toggleDisplayCurrency } = useDisplayCurrency();
 
   return (
     <Drawer direction={isMobile ? "bottom" : "right"}>
@@ -1340,6 +1493,20 @@ function TableCellViewer({
                     {item.provider}
                   </span>
                 </div>
+                {item.instanceId ? (
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground">Instance ID</span>
+                    <span className="font-mono text-xs font-medium">
+                      {item.instanceId}
+                    </span>
+                  </div>
+                ) : null}
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Type</span>
+                  <span className="font-medium">
+                    {getVmTypeLabel(item.provider, item.machineType)}
+                  </span>
+                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Created</span>
                   <span className="font-medium">
@@ -1352,14 +1519,25 @@ function TableCellViewer({
             <Separator />
 
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">
-                BILLING
-              </h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-foreground">
+                  BILLING
+                </h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={toggleDisplayCurrency}
+                >
+                  {displayCurrency}
+                </Button>
+              </div>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-muted-foreground">Price/hour</span>
                   <span className="font-medium">
-                    {getHourlyPriceLabel(item)}
+                    {getHourlyPriceLabel(item, displayCurrency)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
@@ -1374,7 +1552,7 @@ function TableCellViewer({
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-muted-foreground">Total cost</span>
                   <span className="font-semibold">
-                    {getTotalCostLabel(item, billingDate)}
+                    {getTotalCostLabel(item, billingDate, displayCurrency)}
                   </span>
                 </div>
               </div>
@@ -1407,19 +1585,28 @@ function TableCellViewer({
                 variant="outline"
                 size="sm"
                 className="text-xs"
-                disabled={!item.isActive || isStopping || isDeleting}
+                disabled={!item.isActive || isStopping || isStarting || isDeleting}
                 onClick={() => onStop(item)}
               >
                 {isStopping ? "Stopping" : "Stop"}
               </Button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                disabled={item.isActive || isStarting || isStopping || isDeleting}
+                onClick={() => onStart(item)}
+              >
+                {isStarting ? "Starting" : "Start"}
+              </Button>
               <Button
                 onClick={() => onEdit(item)}
                 variant="outline"
                 size="sm"
                 className="text-xs"
-                disabled={isConnecting || isDeleting || isStopping}
+                disabled={isConnecting || isDeleting || isStarting || isStopping}
               >
                 Edit
               </Button>
@@ -1427,7 +1614,7 @@ function TableCellViewer({
                 variant="destructive"
                 size="sm"
                 className="text-xs"
-                disabled={isDeleting || isStopping}
+                disabled={isDeleting || isStarting || isStopping}
                 onClick={() => onDelete(item)}
               >
                 {isDeleting ? "Deleting" : "Delete"}

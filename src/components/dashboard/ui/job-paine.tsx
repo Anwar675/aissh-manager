@@ -12,6 +12,7 @@ import {
   getUsageStart,
   type BillingSource,
 } from "@/lib/billing";
+import { useDisplayCurrency } from "@/hooks/use-display-currency";
 import { LineHeader } from "./line-header";
 
 type ActiveSSHRemote = BillingSource & {
@@ -42,6 +43,7 @@ export default function JobPanel() {
   const params = useParams<{ dasboardId?: string }>();
   const sshId = params.dasboardId;
   const [billingDate, setBillingDate] = React.useState(() => new Date());
+  const { displayCurrency, toggleDisplayCurrency } = useDisplayCurrency();
 
   React.useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -89,6 +91,13 @@ export default function JobPanel() {
               <span className="ml-auto text-sm text-[#484f58]">
                 ETA: <span className="text-[#8b949e]">2h 15m</span>
               </span>
+              <button
+                className="rounded border border-[rgba(88,166,255,0.3)] bg-[rgba(88,166,255,0.1)] px-2 py-1 text-[11px] font-semibold text-[#58a6ff] transition hover:bg-[rgba(88,166,255,0.2)]"
+                type="button"
+                onClick={toggleDisplayCurrency}
+              >
+                {displayCurrency}
+              </button>
             </div>
 
             {/* Stats */}
@@ -122,7 +131,9 @@ export default function JobPanel() {
                 </p>
 
                 <p className="text-[12px] font-semibold text-[#8b949e]">
-                  {activeRemote ? getHourlyPriceLabel(activeRemote) : "Not set"}
+                  {activeRemote
+                    ? getHourlyPriceLabel(activeRemote, displayCurrency)
+                    : "Not set"}
                 </p>
               </div>
 
@@ -133,7 +144,11 @@ export default function JobPanel() {
 
                 <p className="text-[12px] font-semibold text-[#8b949e]">
                   {activeRemote
-                    ? getTotalCostLabel(activeRemote, billingDate)
+                    ? getTotalCostLabel(
+                        activeRemote,
+                        billingDate,
+                        displayCurrency,
+                      )
                     : "Not available"}
                 </p>
               </div>

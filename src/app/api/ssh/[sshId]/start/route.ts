@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "../../../../../../packages/db/src";
-import { disconnectSSHSession } from "../../../../../../services/ssh/ssh-session-manager";
 import {
   createProvider,
   hasProviderApiKey,
@@ -35,53 +34,56 @@ export async function POST(
       );
     }
 
-    // Disconnect SSH session immediately
-    disconnectSSHSession(sshId);
-
-    // Stop provider instance if configured
-    let providerStopped = false;
+    let providerStarted = false;
     let providerError: string | null = null;
 
-    if (
-      remote.provider &&
-      remote.provider !== "local" &&
-      remote.instanceId
-    ) {
-      if (!hasProviderApiKey(remote.provider, remote.providerApiKey)) {
+    if (remote.provider && remote.provider !== "local") {
+      if (!remote.instanceId) {
+        providerError = "Missing provider instance ID.";
+      } else if (!hasProviderApiKey(remote.provider, remote.providerApiKey)) {
         const envKey = getProviderEnvKey(remote.provider);
         providerError = envKey
           ? `Missing provider API key. Set ${envKey} in .env.`
           : "Missing provider API key.";
       } else {
-        try {
-          const provider = createProvider(
-            remote.provider,
-            remote.instanceId,
-            remote.providerApiKey ?? undefined,
-            remote.host, // Use host as region hint if needed
-          );
-          await provider.stopInstance();
-          providerStopped = true;
-        } catch (error) {
-          console.warn("Failed to stop provider instance:", error);
-          providerError = error instanceof Error ? error.message : String(error);
-          // Continue anyway, still mark as inactive in DB
-        }
+        const provider = createProvider(
+          remote.provider,
+          remote.instanceId,
+          remote.providerApiKey ?? undefined,
+          remote.host,
+        );
+
+        await provider.startInstance();
+        providerStarted = true;
       }
     }
 
-    // Mark as inactive in database
+    if (providerError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: providerError,
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const startedAt = new Date();
     const updatedRemote = await prisma.sSHRemote.update({
       where: {
         id: sshId,
       },
       data: {
-        isActive: false,
-        usageEndedAt: new Date(),
+        isActive: true,
+        usageStartedAt: startedAt,
+        usageEndedAt: null,
       },
       select: {
         id: true,
         name: true,
+        usageStartedAt: true,
       },
     });
 
@@ -89,18 +91,20 @@ export async function POST(
       success: true,
       data: {
         ...updatedRemote,
-        sshDisconnected: true,
-        providerStopped,
-        providerError,
+        providerStarted,
+        usageStartedAt: updatedRemote.usageStartedAt?.toISOString() ?? null,
       },
     });
   } catch (error) {
-    console.error("Failed to stop SSH remote", error);
+    console.error("Failed to start SSH remote", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to stop SSH connection",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to start SSH connection",
       },
       {
         status: 500,

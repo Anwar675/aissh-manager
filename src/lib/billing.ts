@@ -8,9 +8,30 @@ export type BillingSource = {
   usageEndedAt?: string | null;
 };
 
+export type CurrencyCode = "USD" | "VND";
+
+export const USD_TO_VND_RATE = 25000;
+
 type HourlyPrice = {
   amount: number;
-  currency: string;
+  currency: CurrencyCode;
+};
+
+const normalizeCurrency = (currency?: string | null): CurrencyCode =>
+  currency === "VND" ? "VND" : "USD";
+
+const convertMoney = (
+  amount: number,
+  sourceCurrency: CurrencyCode,
+  targetCurrency: CurrencyCode,
+) => {
+  if (sourceCurrency === targetCurrency) {
+    return amount;
+  }
+
+  return sourceCurrency === "USD"
+    ? amount * USD_TO_VND_RATE
+    : amount / USD_TO_VND_RATE;
 };
 
 export const formatDate = (value: string) =>
@@ -59,7 +80,7 @@ export const parseHourlyPrice = (item: BillingSource): HourlyPrice | null => {
   if (typeof item.pricePerHour === "number") {
     return {
       amount: item.pricePerHour,
-      currency: item.currency ?? "USD",
+      currency: normalizeCurrency(item.currency),
     };
   }
 
@@ -79,7 +100,7 @@ export const parseHourlyPrice = (item: BillingSource): HourlyPrice | null => {
   };
 };
 
-export const formatMoney = (amount: number, currency: string) => {
+export const formatMoney = (amount: number, currency: CurrencyCode) => {
   if (currency === "VND") {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -108,19 +129,26 @@ export const getBillingEnd = (item: BillingSource, fallbackDate: Date) => {
   return Number.isNaN(endDate.getTime()) ? fallbackDate : endDate;
 };
 
-export const getHourlyPriceLabel = (item: BillingSource) => {
+export const getHourlyPriceLabel = (
+  item: BillingSource,
+  displayCurrency?: CurrencyCode,
+) => {
   const hourlyPrice = parseHourlyPrice(item);
 
   if (!hourlyPrice) {
     return "Not set";
   }
 
-  return `${formatMoney(hourlyPrice.amount, hourlyPrice.currency)}/hr`;
+  const currency = displayCurrency ?? hourlyPrice.currency;
+  const amount = convertMoney(hourlyPrice.amount, hourlyPrice.currency, currency);
+
+  return `${formatMoney(amount, currency)}/hr`;
 };
 
 export const getTotalCostLabel = (
   item: BillingSource,
   fallbackEndDate: Date,
+  displayCurrency?: CurrencyCode,
 ) => {
   const hourlyPrice = parseHourlyPrice(item);
   const usageHours = getUsageHours(
@@ -132,5 +160,12 @@ export const getTotalCostLabel = (
     return "Not available";
   }
 
-  return formatMoney(hourlyPrice.amount * usageHours, hourlyPrice.currency);
+  const currency = displayCurrency ?? hourlyPrice.currency;
+  const amount = convertMoney(
+    hourlyPrice.amount * usageHours,
+    hourlyPrice.currency,
+    currency,
+  );
+
+  return formatMoney(amount, currency);
 };

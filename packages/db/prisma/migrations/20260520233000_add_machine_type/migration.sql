@@ -1,0 +1,1 @@
+ALTER TABLE "SSHRemote" ADD COLUMN "machineType" TEXT;

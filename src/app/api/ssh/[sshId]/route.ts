@@ -24,6 +24,8 @@ export async function GET(
         username: true,
         authType: true,
         provider: true,
+        instanceId: true,
+        machineType: true,
         isActive: true,
         pricePerHour: true,
         currency: true,
@@ -52,6 +54,8 @@ export async function GET(
         ...remote,
         description: remote.description ?? "",
         provider: remote.provider ?? "local",
+        instanceId: remote.instanceId,
+        machineType: remote.machineType ?? "",
         status: remote.isActive ? "Active" : "Saved",
         usageStartedAt: remote.usageStartedAt?.toISOString() ?? null,
         usageEndedAt: remote.usageEndedAt?.toISOString() ?? null,
@@ -90,6 +94,14 @@ export async function PATCH(
       typeof body.username === "string" ? body.username.trim() : "";
     const provider =
       typeof body.provider === "string" ? body.provider.trim() : "";
+    const instanceId =
+      typeof body.instanceId === "string" && body.instanceId.trim()
+        ? body.instanceId.trim()
+        : null;
+    const machineType =
+      typeof body.machineType === "string" && body.machineType.trim()
+        ? body.machineType.trim()
+        : null;
     const port = Number(body.port);
     const password =
       typeof body.password === "string" ? body.password.trim() : "";
@@ -175,6 +187,8 @@ export async function PATCH(
             }
           : {}),
         provider: provider || null,
+        instanceId,
+        machineType,
         pricePerHour,
       },
       select: {
@@ -186,6 +200,8 @@ export async function PATCH(
         username: true,
         authType: true,
         provider: true,
+        instanceId: true,
+        machineType: true,
         isActive: true,
         pricePerHour: true,
         currency: true,
@@ -202,6 +218,8 @@ export async function PATCH(
         ...remote,
         description: remote.description ?? "",
         provider: remote.provider ?? "local",
+        instanceId: remote.instanceId,
+        machineType: remote.machineType ?? "",
         status: remote.isActive ? "Active" : "Saved",
         usageStartedAt: remote.usageStartedAt?.toISOString() ?? null,
         usageEndedAt: remote.usageEndedAt?.toISOString() ?? null,

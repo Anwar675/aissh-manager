@@ -48,6 +48,9 @@ export type SSHRemoteMinAggregateOutputType = {
   privateKey: string | null
   passphrase: string | null
   provider: string | null
+  machineType: string | null
+  instanceId: string | null
+  providerApiKey: string | null
   isActive: boolean | null
   pricePerHour: number | null
   currency: string | null
@@ -70,6 +73,9 @@ export type SSHRemoteMaxAggregateOutputType = {
   privateKey: string | null
   passphrase: string | null
   provider: string | null
+  machineType: string | null
+  instanceId: string | null
+  providerApiKey: string | null
   isActive: boolean | null
   pricePerHour: number | null
   currency: string | null
@@ -92,6 +98,9 @@ export type SSHRemoteCountAggregateOutputType = {
   privateKey: number
   passphrase: number
   provider: number
+  machineType: number
+  instanceId: number
+  providerApiKey: number
   isActive: number
   pricePerHour: number
   currency: number
@@ -126,6 +135,9 @@ export type SSHRemoteMinAggregateInputType = {
   privateKey?: true
   passphrase?: true
   provider?: true
+  machineType?: true
+  instanceId?: true
+  providerApiKey?: true
   isActive?: true
   pricePerHour?: true
   currency?: true
@@ -148,6 +160,9 @@ export type SSHRemoteMaxAggregateInputType = {
   privateKey?: true
   passphrase?: true
   provider?: true
+  machineType?: true
+  instanceId?: true
+  providerApiKey?: true
   isActive?: true
   pricePerHour?: true
   currency?: true
@@ -170,6 +185,9 @@ export type SSHRemoteCountAggregateInputType = {
   privateKey?: true
   passphrase?: true
   provider?: true
+  machineType?: true
+  instanceId?: true
+  providerApiKey?: true
   isActive?: true
   pricePerHour?: true
   currency?: true
@@ -279,6 +297,9 @@ export type SSHRemoteGroupByOutputType = {
   privateKey: string | null
   passphrase: string | null
   provider: string | null
+  machineType: string | null
+  instanceId: string | null
+  providerApiKey: string | null
   isActive: boolean
   pricePerHour: number | null
   currency: string
@@ -324,6 +345,9 @@ export type SSHRemoteWhereInput = {
   privateKey?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
   passphrase?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
   provider?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
+  machineType?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
+  instanceId?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
+  providerApiKey?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
   isActive?: Prisma.BoolFilter<"SSHRemote"> | boolean
   pricePerHour?: Prisma.FloatNullableFilter<"SSHRemote"> | number | null
   currency?: Prisma.StringFilter<"SSHRemote"> | string
@@ -346,6 +370,9 @@ export type SSHRemoteOrderByWithRelationInput = {
   privateKey?: Prisma.SortOrderInput | Prisma.SortOrder
   passphrase?: Prisma.SortOrderInput | Prisma.SortOrder
   provider?: Prisma.SortOrderInput | Prisma.SortOrder
+  machineType?: Prisma.SortOrderInput | Prisma.SortOrder
+  instanceId?: Prisma.SortOrderInput | Prisma.SortOrder
+  providerApiKey?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   pricePerHour?: Prisma.SortOrderInput | Prisma.SortOrder
   currency?: Prisma.SortOrder
@@ -371,6 +398,9 @@ export type SSHRemoteWhereUniqueInput = Prisma.AtLeast<{
   privateKey?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
   passphrase?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
   provider?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
+  machineType?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
+  instanceId?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
+  providerApiKey?: Prisma.StringNullableFilter<"SSHRemote"> | string | null
   isActive?: Prisma.BoolFilter<"SSHRemote"> | boolean
   pricePerHour?: Prisma.FloatNullableFilter<"SSHRemote"> | number | null
   currency?: Prisma.StringFilter<"SSHRemote"> | string
@@ -393,6 +423,9 @@ export type SSHRemoteOrderByWithAggregationInput = {
   privateKey?: Prisma.SortOrderInput | Prisma.SortOrder
   passphrase?: Prisma.SortOrderInput | Prisma.SortOrder
   provider?: Prisma.SortOrderInput | Prisma.SortOrder
+  machineType?: Prisma.SortOrderInput | Prisma.SortOrder
+  instanceId?: Prisma.SortOrderInput | Prisma.SortOrder
+  providerApiKey?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   pricePerHour?: Prisma.SortOrderInput | Prisma.SortOrder
   currency?: Prisma.SortOrder
@@ -423,6 +456,9 @@ export type SSHRemoteScalarWhereWithAggregatesInput = {
   privateKey?: Prisma.StringNullableWithAggregatesFilter<"SSHRemote"> | string | null
   passphrase?: Prisma.StringNullableWithAggregatesFilter<"SSHRemote"> | string | null
   provider?: Prisma.StringNullableWithAggregatesFilter<"SSHRemote"> | string | null
+  machineType?: Prisma.StringNullableWithAggregatesFilter<"SSHRemote"> | string | null
+  instanceId?: Prisma.StringNullableWithAggregatesFilter<"SSHRemote"> | string | null
+  providerApiKey?: Prisma.StringNullableWithAggregatesFilter<"SSHRemote"> | string | null
   isActive?: Prisma.BoolWithAggregatesFilter<"SSHRemote"> | boolean
   pricePerHour?: Prisma.FloatNullableWithAggregatesFilter<"SSHRemote"> | number | null
   currency?: Prisma.StringWithAggregatesFilter<"SSHRemote"> | string
@@ -445,6 +481,9 @@ export type SSHRemoteCreateInput = {
   privateKey?: string | null
   passphrase?: string | null
   provider?: string | null
+  machineType?: string | null
+  instanceId?: string | null
+  providerApiKey?: string | null
   isActive?: boolean
   pricePerHour?: number | null
   currency?: string
@@ -467,6 +506,9 @@ export type SSHRemoteUncheckedCreateInput = {
   privateKey?: string | null
   passphrase?: string | null
   provider?: string | null
+  machineType?: string | null
+  instanceId?: string | null
+  providerApiKey?: string | null
   isActive?: boolean
   pricePerHour?: number | null
   currency?: string
@@ -489,6 +531,9 @@ export type SSHRemoteUpdateInput = {
   privateKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passphrase?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  machineType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  instanceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  providerApiKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pricePerHour?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   currency?: Prisma.StringFieldUpdateOperationsInput | string
@@ -511,6 +556,9 @@ export type SSHRemoteUncheckedUpdateInput = {
   privateKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passphrase?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  machineType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  instanceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  providerApiKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pricePerHour?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   currency?: Prisma.StringFieldUpdateOperationsInput | string
@@ -533,6 +581,9 @@ export type SSHRemoteCreateManyInput = {
   privateKey?: string | null
   passphrase?: string | null
   provider?: string | null
+  machineType?: string | null
+  instanceId?: string | null
+  providerApiKey?: string | null
   isActive?: boolean
   pricePerHour?: number | null
   currency?: string
@@ -555,6 +606,9 @@ export type SSHRemoteUpdateManyMutationInput = {
   privateKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passphrase?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  machineType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  instanceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  providerApiKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pricePerHour?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   currency?: Prisma.StringFieldUpdateOperationsInput | string
@@ -577,6 +631,9 @@ export type SSHRemoteUncheckedUpdateManyInput = {
   privateKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passphrase?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  machineType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  instanceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  providerApiKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pricePerHour?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   currency?: Prisma.StringFieldUpdateOperationsInput | string
@@ -599,6 +656,9 @@ export type SSHRemoteCountOrderByAggregateInput = {
   privateKey?: Prisma.SortOrder
   passphrase?: Prisma.SortOrder
   provider?: Prisma.SortOrder
+  machineType?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
+  providerApiKey?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   pricePerHour?: Prisma.SortOrder
   currency?: Prisma.SortOrder
@@ -626,6 +686,9 @@ export type SSHRemoteMaxOrderByAggregateInput = {
   privateKey?: Prisma.SortOrder
   passphrase?: Prisma.SortOrder
   provider?: Prisma.SortOrder
+  machineType?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
+  providerApiKey?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   pricePerHour?: Prisma.SortOrder
   currency?: Prisma.SortOrder
@@ -648,6 +711,9 @@ export type SSHRemoteMinOrderByAggregateInput = {
   privateKey?: Prisma.SortOrder
   passphrase?: Prisma.SortOrder
   provider?: Prisma.SortOrder
+  machineType?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
+  providerApiKey?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   pricePerHour?: Prisma.SortOrder
   currency?: Prisma.SortOrder
@@ -717,6 +783,9 @@ export type SSHRemoteSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   privateKey?: boolean
   passphrase?: boolean
   provider?: boolean
+  machineType?: boolean
+  instanceId?: boolean
+  providerApiKey?: boolean
   isActive?: boolean
   pricePerHour?: boolean
   currency?: boolean
@@ -739,6 +808,9 @@ export type SSHRemoteSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   privateKey?: boolean
   passphrase?: boolean
   provider?: boolean
+  machineType?: boolean
+  instanceId?: boolean
+  providerApiKey?: boolean
   isActive?: boolean
   pricePerHour?: boolean
   currency?: boolean
@@ -761,6 +833,9 @@ export type SSHRemoteSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   privateKey?: boolean
   passphrase?: boolean
   provider?: boolean
+  machineType?: boolean
+  instanceId?: boolean
+  providerApiKey?: boolean
   isActive?: boolean
   pricePerHour?: boolean
   currency?: boolean
@@ -783,6 +858,9 @@ export type SSHRemoteSelectScalar = {
   privateKey?: boolean
   passphrase?: boolean
   provider?: boolean
+  machineType?: boolean
+  instanceId?: boolean
+  providerApiKey?: boolean
   isActive?: boolean
   pricePerHour?: boolean
   currency?: boolean
@@ -793,7 +871,7 @@ export type SSHRemoteSelectScalar = {
   updatedAt?: boolean
 }
 
-export type SSHRemoteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "host" | "port" | "username" | "authType" | "password" | "privateKey" | "passphrase" | "provider" | "isActive" | "pricePerHour" | "currency" | "usageStartedAt" | "usageEndedAt" | "connectedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["sSHRemote"]>
+export type SSHRemoteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "host" | "port" | "username" | "authType" | "password" | "privateKey" | "passphrase" | "provider" | "machineType" | "instanceId" | "providerApiKey" | "isActive" | "pricePerHour" | "currency" | "usageStartedAt" | "usageEndedAt" | "connectedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["sSHRemote"]>
 
 export type $SSHRemotePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "SSHRemote"
@@ -810,6 +888,9 @@ export type $SSHRemotePayload<ExtArgs extends runtime.Types.Extensions.InternalA
     privateKey: string | null
     passphrase: string | null
     provider: string | null
+    machineType: string | null
+    instanceId: string | null
+    providerApiKey: string | null
     isActive: boolean
     pricePerHour: number | null
     currency: string
@@ -1252,6 +1333,9 @@ export interface SSHRemoteFieldRefs {
   readonly privateKey: Prisma.FieldRef<"SSHRemote", 'String'>
   readonly passphrase: Prisma.FieldRef<"SSHRemote", 'String'>
   readonly provider: Prisma.FieldRef<"SSHRemote", 'String'>
+  readonly machineType: Prisma.FieldRef<"SSHRemote", 'String'>
+  readonly instanceId: Prisma.FieldRef<"SSHRemote", 'String'>
+  readonly providerApiKey: Prisma.FieldRef<"SSHRemote", 'String'>
   readonly isActive: Prisma.FieldRef<"SSHRemote", 'Boolean'>
   readonly pricePerHour: Prisma.FieldRef<"SSHRemote", 'Float'>
   readonly currency: Prisma.FieldRef<"SSHRemote", 'String'>
