@@ -2,6 +2,7 @@ import { DashboardSkeleton } from "@/components/dashboard/ui/dashboard-skeleton"
 import { DataTable } from "@/components/dashboard/ui/data-table";
 import { LineHeader } from "@/components/dashboard/ui/line-header";
 import { prisma } from "../../../../packages/db/src";
+import { getSSHSessionTerminalState } from "../../../../services/ssh/ssh-session-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -38,18 +39,24 @@ async function getVirtualMachines() {
     });
 
     return {
-      data: remotes.map((remote) => ({
-        ...remote,
-        description: remote.description ?? "",
-        provider: remote.provider ?? "local",
-        instanceId: remote.instanceId,
-        machineType: remote.machineType ?? "",
-        status: remote.isActive ? "Active" : "Saved",
-        usageStartedAt: remote.usageStartedAt?.toISOString() ?? null,
-        usageEndedAt: remote.usageEndedAt?.toISOString() ?? null,
-        connectedAt: remote.connectedAt?.toISOString() ?? null,
-        createdAt: remote.createdAt.toISOString(),
-      })),
+      data: remotes.map((remote) => {
+        const terminalState = getSSHSessionTerminalState(remote.id);
+
+        return {
+          ...remote,
+          description: remote.description ?? "",
+          provider: remote.provider ?? "local",
+          instanceId: remote.instanceId,
+          machineType: remote.machineType ?? "",
+          terminalRunning: terminalState.running,
+          terminalProgressPercent: terminalState.progressPercent,
+          status: remote.isActive ? "Active" : "Saved",
+          usageStartedAt: remote.usageStartedAt?.toISOString() ?? null,
+          usageEndedAt: remote.usageEndedAt?.toISOString() ?? null,
+          connectedAt: remote.connectedAt?.toISOString() ?? null,
+          createdAt: remote.createdAt.toISOString(),
+        };
+      }),
       error: null,
     };
   } catch (error) {

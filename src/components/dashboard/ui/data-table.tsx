@@ -126,6 +126,8 @@ export const schema = z.object({
   machineType: z.string(),
   status: z.string(),
   isActive: z.boolean(),
+  terminalRunning: z.boolean().optional(),
+  terminalProgressPercent: z.number().optional().nullable(),
   createdAt: z.string(),
   cost: z.string().optional().nullable(),
   pricePerHour: z.number().optional().nullable(),
@@ -136,6 +138,12 @@ export const schema = z.object({
 });
 
 type VirtualMachine = z.infer<typeof schema>;
+
+type TerminalStatePayload = {
+  id: string;
+  terminalRunning: boolean;
+  terminalProgressPercent: number | null;
+};
 
 type EditSSHValues = {
   name: string;
@@ -195,6 +203,26 @@ const getStatusBadgeClassName = (item: VirtualMachine) =>
   item.status === "Not available"
     ? "border-red-500/40 bg-red-500/10 px-1.5 text-red-600"
     : "px-1.5 text-muted-foreground";
+
+const getTerminalProcessingDotClassName = (item: VirtualMachine) =>
+  item.terminalRunning ? "text-green-600" : "text-zinc-400";
+
+const getTerminalProcessingBadgeClassName = (item: VirtualMachine) =>
+  item.terminalRunning
+    ? "border-green-500/40 bg-green-500/10 px-1.5 text-green-600"
+    : "px-1.5 text-muted-foreground";
+
+const getTerminalProcessingLabel = (item: VirtualMachine) => {
+  if (!item.terminalRunning) {
+    return "Idle";
+  }
+
+  if (typeof item.terminalProgressPercent !== "number") {
+    return "Running";
+  }
+
+  return `Running ${Math.round(item.terminalProgressPercent)}%`;
+};
 
 type TableActions = {
   connectingIds: Set<string>;
@@ -329,6 +357,19 @@ const createColumns = ({
       >
         <GoDotFill className={getStatusDotClassName(row.original)} />
         {row.original.status}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: "terminalRunning",
+    header: "Processing",
+    cell: ({ row }) => (
+      <Badge
+        variant="outline"
+        className={getTerminalProcessingBadgeClassName(row.original)}
+      >
+        <GoDotFill className={getTerminalProcessingDotClassName(row.original)} />
+        {getTerminalProcessingLabel(row.original)}
       </Badge>
     ),
   },
@@ -774,6 +815,57 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
     setData(sortActiveFirst(initialData));
   }, [initialData]);
 
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const syncTerminalStates = async () => {
+      try {
+        const response = await fetch("/api/ssh/terminal-states", {
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as {
+          success?: boolean;
+          data?: TerminalStatePayload[];
+        };
+
+        if (!response.ok || !payload.success || !payload.data || cancelled) {
+          return;
+        }
+
+        const statesById = new Map(
+          payload.data.map((state) => [state.id, state]),
+        );
+
+        setData((current) =>
+          current.map((machine) => {
+            const terminalState = statesById.get(machine.id);
+
+            if (!terminalState) {
+              return machine;
+            }
+
+            return {
+              ...machine,
+              terminalRunning: terminalState.terminalRunning,
+              terminalProgressPercent:
+                terminalState.terminalProgressPercent,
+            };
+          }),
+        );
+      } catch {
+        // Runtime terminal state is best-effort; keep the last known table state.
+      }
+    };
+
+    void syncTerminalStates();
+    const intervalId = window.setInterval(syncTerminalStates, 3000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
   const handleConnect = React.useCallback(
     async (item: VirtualMachine) => {
       setConnectingIds((current) => new Set(current).add(item.id));
@@ -809,9 +901,11 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
             current.map((machine) =>
               machine.id === item.id
                 ? {
-                    ...machine,
-                    isActive: true,
-                    status: "Active",
+	                    ...machine,
+	                    isActive: true,
+	                    terminalRunning: false,
+	                    terminalProgressPercent: null,
+	                    status: "Active",
                     connectedAt,
                     usageStartedAt: connectedAt,
                     usageEndedAt: null,
@@ -829,9 +923,11 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
           current.map((machine) =>
             machine.id === item.id
               ? {
-                  ...machine,
-                  isActive: false,
-                  status: "Not available",
+	                  ...machine,
+	                  isActive: false,
+	                  terminalRunning: false,
+	                  terminalProgressPercent: null,
+	                  status: "Not available",
                 }
               : machine,
           ),
@@ -974,9 +1070,11 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
             current.map((machine) =>
               machine.id === item.id
                 ? {
-                    ...machine,
-                    isActive: false,
-                    status: "Saved",
+	                    ...machine,
+	                    isActive: false,
+	                    terminalRunning: false,
+	                    terminalProgressPercent: null,
+	                    status: "Saved",
                     usageEndedAt,
                   }
                 : machine,
@@ -990,10 +1088,10 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
         setData((current) =>
           current.map((machine) =>
             machine.id === item.id
-              ? {
-                  ...machine,
-                  status: machine.isActive ? "Active" : "Saved",
-                }
+	              ? {
+	                  ...machine,
+	                  status: machine.isActive ? "Active" : "Saved",
+	                }
               : machine,
           ),
         );
@@ -1049,9 +1147,11 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
             current.map((machine) =>
               machine.id === item.id
                 ? {
-                    ...machine,
-                    isActive: true,
-                    status: "Active",
+	                    ...machine,
+	                    isActive: true,
+	                    terminalRunning: false,
+	                    terminalProgressPercent: null,
+	                    status: "Active",
                     usageStartedAt,
                     usageEndedAt: null,
                   }
@@ -1066,10 +1166,10 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
         setData((current) =>
           current.map((machine) =>
             machine.id === item.id
-              ? {
-                  ...machine,
-                  status: machine.isActive ? "Active" : "Saved",
-                }
+	              ? {
+	                  ...machine,
+	                  status: machine.isActive ? "Active" : "Saved",
+	                }
               : machine,
           ),
         );
@@ -1174,9 +1274,11 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
                   provider: connection.provider ?? "local",
                   instanceId: connection.instanceId ?? null,
                   machineType: connection.machineType ?? "",
-                  status: "Saved",
-                  isActive: false,
-                  pricePerHour: connection.pricePerHour ?? null,
+	                  status: "Saved",
+	                  isActive: false,
+	                  terminalRunning: false,
+	                  terminalProgressPercent: null,
+	                  pricePerHour: connection.pricePerHour ?? null,
                   currency: "USD",
                   usageStartedAt: null,
                   usageEndedAt: null,

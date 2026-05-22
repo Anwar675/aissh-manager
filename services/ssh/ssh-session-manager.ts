@@ -63,6 +63,21 @@ export function closeSSHSessionTerminal(id: string) {
   return ssh.closeTerminal();
 }
 
+export function isSSHSessionTerminalRunning(id: string) {
+  const ssh = getSSHSession(id);
+
+  return Boolean(ssh?.isTerminalRunning());
+}
+
+export function getSSHSessionTerminalState(id: string) {
+  const ssh = getSSHSession(id);
+
+  return {
+    running: Boolean(ssh?.isTerminalRunning()),
+    progressPercent: ssh?.getTerminalProgressPercent() ?? null,
+  };
+}
+
 export function writeSSHSessionTerminal(id: string, input: string) {
   const ssh = getSSHSession(id);
 

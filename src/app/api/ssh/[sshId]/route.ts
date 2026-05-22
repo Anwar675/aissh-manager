@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "../../../../../packages/db/src";
+import { getSSHSessionTerminalState } from "../../../../../services/ssh/ssh-session-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,8 @@ export async function GET(
       );
     }
 
+    const terminalState = getSSHSessionTerminalState(remote.id);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -56,6 +59,8 @@ export async function GET(
         provider: remote.provider ?? "local",
         instanceId: remote.instanceId,
         machineType: remote.machineType ?? "",
+        terminalRunning: terminalState.running,
+        terminalProgressPercent: terminalState.progressPercent,
         status: remote.isActive ? "Active" : "Saved",
         usageStartedAt: remote.usageStartedAt?.toISOString() ?? null,
         usageEndedAt: remote.usageEndedAt?.toISOString() ?? null,
@@ -212,6 +217,8 @@ export async function PATCH(
       },
     });
 
+    const terminalState = getSSHSessionTerminalState(remote.id);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -220,6 +227,8 @@ export async function PATCH(
         provider: remote.provider ?? "local",
         instanceId: remote.instanceId,
         machineType: remote.machineType ?? "",
+        terminalRunning: terminalState.running,
+        terminalProgressPercent: terminalState.progressPercent,
         status: remote.isActive ? "Active" : "Saved",
         usageStartedAt: remote.usageStartedAt?.toISOString() ?? null,
         usageEndedAt: remote.usageEndedAt?.toISOString() ?? null,

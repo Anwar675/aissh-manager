@@ -20,6 +20,8 @@ type ActiveSSHRemote = BillingSource & {
   name: string;
   status: string;
   isActive: boolean;
+  terminalRunning: boolean;
+  terminalProgressPercent: number | null;
 };
 
 type TerminalLine = {
@@ -158,7 +160,7 @@ function stripTerminalControlCodes(
           output = output.slice(0, -1);
         } else if (char === "\n" || char === "\r" || char === "\t") {
           output += char;
-        } else if (!state.alternateScreen && char >= " " && char !== "\x7f") {
+        } else if (char >= " " && char !== "\x7f") {
           output += state.specialGraphics ? mapSpecialGraphic(char) : char;
         }
     }
@@ -316,16 +318,19 @@ export default function JobPanel() {
   );
   const [terminalLines, setTerminalLines] = React.useState<TerminalLine[]>([]);
   const [isTerminalRunning, setIsTerminalRunning] = React.useState(false);
+  const [isTerminalReady, setIsTerminalReady] = React.useState(false);
   const [isPausingTerminal, setIsPausingTerminal] = React.useState(false);
   const [isRestartingTerminal, setIsRestartingTerminal] =
     React.useState(false);
   const [terminalError, setTerminalError] = React.useState<string | null>(null);
   const eventSourceRef = React.useRef<EventSource | null>(null);
+  const terminalViewportRef = React.useRef<HTMLDivElement | null>(null);
   const lineIdRef = React.useRef(0);
   const terminalControlStateRef = React.useRef<TerminalControlState>(
     createTerminalControlState(),
   );
   const terminalLineOpenRef = React.useRef(false);
+  const terminalPendingCarriageReturnRef = React.useRef(false);
   const { displayCurrency, toggleDisplayCurrency } = useDisplayCurrency();
 
   const appendTerminalMessage = React.useCallback(
@@ -358,6 +363,7 @@ export default function JobPanel() {
       });
 
       terminalLineOpenRef.current = false;
+      terminalPendingCarriageReturnRef.current = false;
     },
     [],
   );
@@ -367,7 +373,7 @@ export default function JobPanel() {
       const cleaned = stripTerminalControlCodes(
         text,
         terminalControlStateRef.current,
-      );
+      ).replace(/\r\n/g, "\n");
 
       if (!cleaned) {
         return;
@@ -391,13 +397,28 @@ export default function JobPanel() {
           terminalLineOpenRef.current = true;
         };
 
+        const applyCarriageReturn = () => {
+          ensureLine();
+          next[next.length - 1] = {
+            ...next[next.length - 1],
+            text: "",
+          };
+        };
+
         for (const char of cleaned) {
+          if (terminalPendingCarriageReturnRef.current) {
+            terminalPendingCarriageReturnRef.current = false;
+
+            if (char === "\n") {
+              terminalLineOpenRef.current = false;
+              continue;
+            }
+
+            applyCarriageReturn();
+          }
+
           if (char === "\r") {
-            ensureLine();
-            next[next.length - 1] = {
-              ...next[next.length - 1],
-              text: "",
-            };
+            terminalPendingCarriageReturnRef.current = true;
             continue;
           }
 
@@ -423,6 +444,7 @@ export default function JobPanel() {
     eventSourceRef.current?.close();
     eventSourceRef.current = null;
     setIsTerminalRunning(false);
+    setIsTerminalReady(false);
   }, []);
 
   React.useEffect(() => {
@@ -439,7 +461,15 @@ export default function JobPanel() {
     };
   }, []);
 
-  const { data: activeRemote } = useQuery({
+  React.useEffect(() => {
+    const viewport = terminalViewportRef.current;
+
+    if (viewport) {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
+  }, [terminalLines]);
+
+  const { data: activeRemote, refetch: refetchActiveRemote } = useQuery({
     queryKey: ["ssh-billing", sshId],
     queryFn: () => fetchActiveSSHRemote(sshId),
     enabled: Boolean(sshId),
@@ -488,6 +518,18 @@ export default function JobPanel() {
       : formatMetricNumber(jobMetrics.epochTotal);
   const lossValue = jobMetrics.loss ?? "Not available";
   const etaValue = jobMetrics.eta ?? "Not available";
+  const dashboardTerminalRunning =
+    isTerminalReady || Boolean(activeRemote?.terminalRunning);
+  const statusLabel = dashboardTerminalRunning
+    ? "RUNNING"
+    : activeRemote?.isActive
+      ? "ACTIVE"
+      : "IDLE";
+  const statusClassName = dashboardTerminalRunning
+    ? "animate-pulse border-[rgba(63,185,80,0.3)] bg-[rgba(63,185,80,0.15)] text-[#3fb950]"
+    : activeRemote?.isActive
+      ? "border-[rgba(210,153,34,0.3)] bg-[rgba(210,153,34,0.12)] text-[#d29922]"
+      : "border-[#30363d] bg-[#21262d] text-[#8b949e]";
 
   const openTerminalStream = React.useCallback(
     (openingMessage = "Opening terminal stream...") => {
@@ -499,8 +541,10 @@ export default function JobPanel() {
       setTerminalError(null);
       setTerminalLines([]);
       setIsTerminalRunning(true);
+      setIsTerminalReady(false);
       terminalControlStateRef.current = createTerminalControlState();
       terminalLineOpenRef.current = false;
+      terminalPendingCarriageReturnRef.current = false;
       appendTerminalMessage("system", openingMessage);
 
       const source = new EventSource(
@@ -515,6 +559,8 @@ export default function JobPanel() {
         };
 
         appendTerminalMessage("system", payload.message ?? "Terminal connected");
+        setIsTerminalReady(true);
+        void refetchActiveRemote();
       });
 
       source.addEventListener("stdout", (event) => {
@@ -542,6 +588,7 @@ export default function JobPanel() {
         setTerminalError(message);
         appendTerminalMessage("stderr", message);
         stopTerminalStream();
+        void refetchActiveRemote();
       });
 
       source.addEventListener("done", (event) => {
@@ -551,15 +598,23 @@ export default function JobPanel() {
 
         appendTerminalMessage("system", payload.message ?? "Terminal stopped");
         stopTerminalStream();
+        void refetchActiveRemote();
       });
 
       source.onerror = () => {
         setTerminalError("Terminal stream disconnected");
         appendTerminalMessage("stderr", "Terminal stream disconnected");
         stopTerminalStream();
+        void refetchActiveRemote();
       };
     },
-    [appendTerminalMessage, appendTerminalOutput, sshId, stopTerminalStream],
+    [
+      appendTerminalMessage,
+      appendTerminalOutput,
+      refetchActiveRemote,
+      sshId,
+      stopTerminalStream,
+    ],
   );
 
   const handleStartTerminal = React.useCallback(() => {
@@ -571,7 +626,7 @@ export default function JobPanel() {
   }, [isTerminalRunning, openTerminalStream, sshId]);
 
   const handleSendTerminalInput = React.useCallback(async () => {
-    if (!sshId || !isTerminalRunning || !terminalInput.trim()) {
+    if (!sshId || !isTerminalReady || !terminalInput.trim()) {
       return;
     }
 
@@ -587,7 +642,7 @@ export default function JobPanel() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            input: `${input}\n`,
+            input: `${input}\r`,
           }),
         },
       );
@@ -606,7 +661,7 @@ export default function JobPanel() {
       appendTerminalMessage("stderr", message);
       setTerminalInput(input);
     }
-  }, [appendTerminalMessage, isTerminalRunning, sshId, terminalInput]);
+  }, [appendTerminalMessage, isTerminalReady, sshId, terminalInput]);
 
   const handlePauseTerminal = React.useCallback(async () => {
     if (!sshId || isPausingTerminal) {
@@ -691,8 +746,10 @@ export default function JobPanel() {
           <div className="overflow-hidden relative min-h-100 rounded-md border border-[#30363d] bg-[#161b22] m-[14px_20px] pb-16">
             {/* Header */}
             <div className="flex items-center gap-2 border-b border-[#30363d] bg-[#1c2128] px-3 py-2">
-              <span className="animate-pulse rounded border border-[rgba(63,185,80,0.3)] bg-[rgba(63,185,80,0.15)] px-[7px] py-[2px] text-sm tracking-[0.05em] text-[#3fb950]">
-                ● {activeRemote?.isActive ? "RUNNING" : "IDLE"}
+              <span
+                className={`rounded border px-[7px] py-[2px] text-sm tracking-[0.05em] ${statusClassName}`}
+              >
+                ● {statusLabel}
               </span>
 
               <span className="text-[12px] font-semibold tracking-[0.05em] text-[#e6edf3]">
@@ -797,12 +854,14 @@ export default function JobPanel() {
               <div className="mb-[6px] flex flex-wrap items-center gap-2 text-sm text-[#484f58]">
                 <span
                   className={`h-[6px] w-[6px] rounded-full ${
-                    isTerminalRunning
+                    isTerminalReady
                       ? "animate-pulse bg-[#3fb950]"
+                      : isTerminalRunning
+                        ? "bg-[#d29922]"
                       : "bg-[#484f58]"
                   }`}
                 />
-                <span>Live Logs</span>
+                <span>Live Terminal Logs</span>
                 {terminalError ? (
                   <span className="text-[#f85149]">{terminalError}</span>
                 ) : null}
@@ -833,7 +892,7 @@ export default function JobPanel() {
                   className="rounded border border-[rgba(88,166,255,0.3)] bg-[rgba(88,166,255,0.1)] px-3 py-2 text-sm text-[#58a6ff] transition hover:bg-[rgba(88,166,255,0.2)] disabled:cursor-not-allowed disabled:opacity-50"
                   type="button"
                   disabled={
-                    !sshId || !isTerminalRunning || !terminalInput.trim()
+                    !sshId || !isTerminalReady || !terminalInput.trim()
                   }
                   onClick={() => void handleSendTerminalInput()}
                 >
@@ -841,7 +900,10 @@ export default function JobPanel() {
                 </button>
               </div>
 
-              <div className="max-h-64 overflow-y-auto rounded border border-[#21262d] bg-[#0d1117] p-2 font-mono">
+              <div
+                className="max-h-64 overflow-y-auto rounded border border-[#21262d] bg-[#0d1117] p-2 font-mono"
+                ref={terminalViewportRef}
+              >
                 {terminalLines.length ? (
                   terminalLines.map((line) => (
                     <div

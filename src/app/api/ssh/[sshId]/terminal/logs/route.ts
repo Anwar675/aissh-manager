@@ -72,6 +72,7 @@ export async function GET(
         unsubscribeShellOutput?.();
         close();
       });
+      
 
       void (async () => {
         try {
@@ -88,17 +89,17 @@ export async function GET(
             });
           }
 
-          send("system", {
-            message:
-              "Interactive shell connected. Commands share cwd, env, aliases, history, and foreground process state.",
-          });
-
           const shellStream = await ssh.streamShell((type, chunk) => {
             send(type, {
               chunk,
             });
           });
           unsubscribeShellOutput = shellStream.unsubscribe;
+
+          send("system", {
+            message:
+              "Interactive shell connected. Commands share cwd, env, aliases, history, and foreground process state.",
+          });
 
           await shellStream.done;
 

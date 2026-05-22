@@ -28,6 +28,23 @@ type TerminalChannel = {
 type TerminalOutputType = "stdout" | "stderr";
 type TerminalOutputListener = (type: TerminalOutputType, chunk: string) => void;
 
+function parseTerminalProgressPercent(chunk: string) {
+  const matches = [...chunk.matchAll(/\b(100|[1-9]?\d(?:\.\d+)?)%/g)];
+  const lastMatch = matches.at(-1);
+
+  if (!lastMatch) {
+    return null;
+  }
+
+  const parsed = Number(lastMatch[1]);
+
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+
+  return Math.max(0, Math.min(100, parsed));
+}
+
 export class SSHService {
   private ssh = new NodeSSH();
 
@@ -42,6 +59,8 @@ export class SSHService {
   private terminalStartPromise: Promise<void> | null = null;
 
   private terminalOutputListeners = new Set<TerminalOutputListener>();
+
+  private terminalProgressPercent: number | null = null;
 
   constructor(private remote?: SSHRemote) {}
 
@@ -126,7 +145,17 @@ export class SSHService {
     return Boolean(this.terminalChannel || this.terminalPromise);
   }
 
+  getTerminalProgressPercent() {
+    return this.terminalProgressPercent;
+  }
+
   private emitTerminalOutput(type: TerminalOutputType, chunk: string) {
+    const progressPercent = parseTerminalProgressPercent(chunk);
+
+    if (progressPercent !== null) {
+      this.terminalProgressPercent = progressPercent;
+    }
+
     for (const listener of this.terminalOutputListeners) {
       listener(type, chunk);
     }
@@ -192,6 +221,8 @@ export class SSHService {
     }
 
     this.terminalStartPromise = (async () => {
+      this.terminalProgressPercent = null;
+
       const channel = await this.ssh.requestShell({
         term: "xterm-256color",
         cols: 120,
@@ -205,7 +236,7 @@ export class SSHService {
           Buffer.isBuffer(chunk) ? chunk.toString("utf8") : String(chunk),
         );
       });
-      channel.stderr.on("data", (chunk: unknown) => {
+      channel.stderr?.on?.("data", (chunk: unknown) => {
         this.emitTerminalOutput(
           "stderr",
           Buffer.isBuffer(chunk) ? chunk.toString("utf8") : String(chunk),
@@ -232,7 +263,12 @@ export class SSHService {
   async streamShell(onOutput: TerminalOutputListener) {
     const unsubscribe = this.subscribeTerminalOutput(onOutput);
 
-    await this.ensureShell();
+    try {
+      await this.ensureShell();
+    } catch (error) {
+      unsubscribe();
+      throw error;
+    }
 
     return {
       done: this.terminalPromise ?? Promise.resolve(),
@@ -247,7 +283,11 @@ export class SSHService {
       return false;
     }
 
-    channel.write?.(input);
+    if (!channel.write) {
+      return false;
+    }
+
+    channel.write(input);
 
     return true;
   }
