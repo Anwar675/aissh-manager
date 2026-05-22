@@ -43,6 +43,36 @@ export function disconnectSSHSession(id: string) {
   return true;
 }
 
+export function stopSSHSessionTerminal(id: string) {
+  const ssh = getSSHSession(id);
+
+  if (!ssh) {
+    return false;
+  }
+
+  return ssh.stopTerminal();
+}
+
+export function closeSSHSessionTerminal(id: string) {
+  const ssh = getSSHSession(id);
+
+  if (!ssh) {
+    return false;
+  }
+
+  return ssh.closeTerminal();
+}
+
+export function writeSSHSessionTerminal(id: string, input: string) {
+  const ssh = getSSHSession(id);
+
+  if (!ssh) {
+    return false;
+  }
+
+  return ssh.writeTerminal(input);
+}
+
 export function disconnectAllSSHSessions() {
   for (const [id, ssh] of sessions) {
     ssh.disconnect();

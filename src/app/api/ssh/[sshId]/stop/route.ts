@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "../../../../../../packages/db/src";
-import { disconnectSSHSession } from "../../../../../../services/ssh/ssh-session-manager";
+import {
+  disconnectSSHSession,
+  stopSSHSessionTerminal,
+} from "../../../../../../services/ssh/ssh-session-manager";
 import {
   createProvider,
   hasProviderApiKey,
@@ -34,6 +37,8 @@ export async function POST(
         },
       );
     }
+
+    const terminalStopped = stopSSHSessionTerminal(sshId);
 
     // Disconnect SSH session immediately
     disconnectSSHSession(sshId);
@@ -90,6 +95,7 @@ export async function POST(
       data: {
         ...updatedRemote,
         sshDisconnected: true,
+        terminalStopped,
         providerStopped,
         providerError,
       },
