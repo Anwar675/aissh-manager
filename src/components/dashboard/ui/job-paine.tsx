@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import * as React from "react";
-
+import { FaChartLine } from "react-icons/fa";
 import {
   formatDuration,
   getBillingEnd,
@@ -14,6 +14,7 @@ import {
 } from "@/lib/billing";
 import { useDisplayCurrency } from "@/hooks/use-display-currency";
 import { LineHeader } from "./line-header";
+import Link from "next/link";
 
 type ActiveSSHRemote = BillingSource & {
   id: string;
@@ -957,8 +958,11 @@ export default function JobPanel() {
                 {isRestartingTerminal ? "Restarting" : "↻ Restart Terminal"}
               </button>
 
-              <button className="rounded border border-[rgba(88,166,255,0.3)] bg-[rgba(88,166,255,0.1)] px-4 py-2 text-sm tracking-[0.04em] text-[#58a6ff] transition hover:bg-[rgba(88,166,255,0.2)]">
-                📁 View Checkpoints
+              <button className="rounded  border border-[rgba(88,166,255,0.3)] bg-[rgba(88,166,255,0.1)] px-4 py-2 text-sm tracking-[0.04em] text-[#58a6ff] transition hover:bg-[rgba(88,166,255,0.2)]">
+                <Link href={`/analytis/${sshId}`} className="flex items-center gap-2">
+                 <FaChartLine /> Analytics
+                </Link>
+               
               </button>
 
               <span className="ml-auto text-sm text-[#484f58]">

@@ -1,8 +1,65 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../packages/db/src";
+import { getSSHSessionTerminalState } from "../../../../services/ssh/ssh-session-manager";
 
-export async function GET() {
+export const dynamic = "force-dynamic";
+
+export async function GET(req: Request) {
   try {
+    const status = new URL(req.url).searchParams.get("status");
+
+    if (status === "active") {
+      const remotes = await prisma.sSHRemote.findMany({
+        where: {
+          isActive: true,
+        },
+        orderBy: {
+          connectedAt: "desc",
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          host: true,
+          port: true,
+          username: true,
+          authType: true,
+          provider: true,
+          instanceId: true,
+          machineType: true,
+          isActive: true,
+          pricePerHour: true,
+          currency: true,
+          usageStartedAt: true,
+          usageEndedAt: true,
+          connectedAt: true,
+          createdAt: true,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: remotes.map((remote) => {
+          const terminalState = getSSHSessionTerminalState(remote.id);
+
+          return {
+            ...remote,
+            description: remote.description ?? "",
+            provider: remote.provider ?? "local",
+            instanceId: remote.instanceId,
+            machineType: remote.machineType ?? "",
+            terminalRunning: terminalState.running,
+            terminalProgressPercent: terminalState.progressPercent,
+            status: "Active",
+            usageStartedAt: remote.usageStartedAt?.toISOString() ?? null,
+            usageEndedAt: remote.usageEndedAt?.toISOString() ?? null,
+            connectedAt: remote.connectedAt?.toISOString() ?? null,
+            createdAt: remote.createdAt.toISOString(),
+          };
+        }),
+      });
+    }
+
     const [total, active] = await Promise.all([
       prisma.sSHRemote.count(),
       prisma.sSHRemote.count({
