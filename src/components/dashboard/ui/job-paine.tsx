@@ -106,10 +106,7 @@ function mapSpecialGraphic(char: string) {
   }
 }
 
-function stripTerminalControlCodes(
-  value: string,
-  state: TerminalControlState,
-) {
+function stripTerminalControlCodes(value: string, state: TerminalControlState) {
   let output = "";
 
   for (const char of value) {
@@ -321,8 +318,7 @@ export default function JobPanel() {
   const [isTerminalRunning, setIsTerminalRunning] = React.useState(false);
   const [isTerminalReady, setIsTerminalReady] = React.useState(false);
   const [isPausingTerminal, setIsPausingTerminal] = React.useState(false);
-  const [isRestartingTerminal, setIsRestartingTerminal] =
-    React.useState(false);
+  const [isRestartingTerminal, setIsRestartingTerminal] = React.useState(false);
   const [terminalError, setTerminalError] = React.useState<string | null>(null);
   const eventSourceRef = React.useRef<EventSource | null>(null);
   const terminalViewportRef = React.useRef<HTMLDivElement | null>(null);
@@ -337,10 +333,7 @@ export default function JobPanel() {
   const appendTerminalMessage = React.useCallback(
     (type: TerminalLine["type"], text: string) => {
       const messageControlState = createTerminalControlState();
-      const parts = stripTerminalControlCodes(
-        text,
-        messageControlState,
-      )
+      const parts = stripTerminalControlCodes(text, messageControlState)
         .replace(/\r/g, "")
         .split("\n");
 
@@ -559,7 +552,10 @@ export default function JobPanel() {
           message?: string;
         };
 
-        appendTerminalMessage("system", payload.message ?? "Terminal connected");
+        appendTerminalMessage(
+          "system",
+          payload.message ?? "Terminal connected",
+        );
         setIsTerminalReady(true);
         void refetchActiveRemote();
       });
@@ -728,12 +724,7 @@ export default function JobPanel() {
     } finally {
       setIsRestartingTerminal(false);
     }
-  }, [
-    appendTerminalMessage,
-    isRestartingTerminal,
-    openTerminalStream,
-    sshId,
-  ]);
+  }, [appendTerminalMessage, isRestartingTerminal, openTerminalStream, sshId]);
 
   return (
     <div className="overflow-hidden ">
@@ -859,7 +850,7 @@ export default function JobPanel() {
                       ? "animate-pulse bg-[#3fb950]"
                       : isTerminalRunning
                         ? "bg-[#d29922]"
-                      : "bg-[#484f58]"
+                        : "bg-[#484f58]"
                   }`}
                 />
                 <span>Live Terminal Logs</span>
@@ -892,9 +883,7 @@ export default function JobPanel() {
                 <button
                   className="rounded border border-[rgba(88,166,255,0.3)] bg-[rgba(88,166,255,0.1)] px-3 py-2 text-sm text-[#58a6ff] transition hover:bg-[rgba(88,166,255,0.2)] disabled:cursor-not-allowed disabled:opacity-50"
                   type="button"
-                  disabled={
-                    !sshId || !isTerminalReady || !terminalInput.trim()
-                  }
+                  disabled={!sshId || !isTerminalReady || !terminalInput.trim()}
                   onClick={() => void handleSendTerminalInput()}
                 >
                   Send
@@ -907,10 +896,7 @@ export default function JobPanel() {
               >
                 {terminalLines.length ? (
                   terminalLines.map((line) => (
-                    <div
-                      className="flex gap-2 py-[2px] text-sm"
-                      key={line.id}
-                    >
+                    <div className="flex gap-2 py-[2px] text-sm" key={line.id}>
                       {line.type === "system" ? (
                         <span className="shrink-0 text-[#484f58]">
                           [{line.time}]
@@ -959,10 +945,12 @@ export default function JobPanel() {
               </button>
 
               <button className="rounded  border border-[rgba(88,166,255,0.3)] bg-[rgba(88,166,255,0.1)] px-4 py-2 text-sm tracking-[0.04em] text-[#58a6ff] transition hover:bg-[rgba(88,166,255,0.2)]">
-                <Link href={`/analytis/${sshId}`} className="flex items-center gap-2">
-                 <FaChartLine /> Analytics
+                <Link
+                  href={`/analytis/${sshId}`}
+                  className="flex items-center gap-2"
+                >
+                  <FaChartLine /> Analytics
                 </Link>
-               
               </button>
 
               <span className="ml-auto text-sm text-[#484f58]">

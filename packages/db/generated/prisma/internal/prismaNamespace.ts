@@ -384,7 +384,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
-  SSHRemote: 'SSHRemote'
+  SSHRemote: 'SSHRemote',
+  AutoStop: 'AutoStop'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -400,7 +401,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "sSHRemote"
+    modelProps: "sSHRemote" | "autoStop"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -478,6 +479,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AutoStop: {
+      payload: Prisma.$AutoStopPayload<ExtArgs>
+      fields: Prisma.AutoStopFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AutoStopFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoStopPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AutoStopFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoStopPayload>
+        }
+        findFirst: {
+          args: Prisma.AutoStopFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoStopPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AutoStopFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoStopPayload>
+        }
+        findMany: {
+          args: Prisma.AutoStopFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoStopPayload>[]
+        }
+        create: {
+          args: Prisma.AutoStopCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoStopPayload>
+        }
+        createMany: {
+          args: Prisma.AutoStopCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AutoStopCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoStopPayload>[]
+        }
+        delete: {
+          args: Prisma.AutoStopDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoStopPayload>
+        }
+        update: {
+          args: Prisma.AutoStopUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoStopPayload>
+        }
+        deleteMany: {
+          args: Prisma.AutoStopDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AutoStopUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AutoStopUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoStopPayload>[]
+        }
+        upsert: {
+          args: Prisma.AutoStopUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoStopPayload>
+        }
+        aggregate: {
+          args: Prisma.AutoStopAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAutoStop>
+        }
+        groupBy: {
+          args: Prisma.AutoStopGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AutoStopGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AutoStopCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AutoStopCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -543,6 +618,21 @@ export const SSHRemoteScalarFieldEnum = {
 } as const
 
 export type SSHRemoteScalarFieldEnum = (typeof SSHRemoteScalarFieldEnum)[keyof typeof SSHRemoteScalarFieldEnum]
+
+
+export const AutoStopScalarFieldEnum = {
+  id: 'id',
+  sshRemoteId: 'sshRemoteId',
+  targetType: 'targetType',
+  scheduledAt: 'scheduledAt',
+  status: 'status',
+  executedAt: 'executedAt',
+  error: 'error',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AutoStopScalarFieldEnum = (typeof AutoStopScalarFieldEnum)[keyof typeof AutoStopScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -649,6 +739,34 @@ export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel
  * Reference to a field of type 'DateTime[]'
  */
 export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
+ * Reference to a field of type 'AutoStopTargetType'
+ */
+export type EnumAutoStopTargetTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AutoStopTargetType'>
+    
+
+
+/**
+ * Reference to a field of type 'AutoStopTargetType[]'
+ */
+export type ListEnumAutoStopTargetTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AutoStopTargetType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'AutoStopStatus'
+ */
+export type EnumAutoStopStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AutoStopStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'AutoStopStatus[]'
+ */
+export type ListEnumAutoStopStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AutoStopStatus[]'>
     
 
 /**
@@ -762,6 +880,7 @@ export type PrismaClientOptions = ({
 }
 export type GlobalOmitConfig = {
   sSHRemote?: Prisma.SSHRemoteOmit
+  autoStop?: Prisma.AutoStopOmit
 }
 
 /* Types for Logging */

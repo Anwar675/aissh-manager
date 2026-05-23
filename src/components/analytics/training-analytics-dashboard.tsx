@@ -1112,7 +1112,7 @@ export function TrainingAnalyticsDashboard() {
           : bestMetric?.validationLoss &&
               latestMetric.validationLoss > bestMetric.validationLoss * 1.1
             ? "overfitting warning"
-            : `Latest validation loss in ${formatEpochWindowScope(
+            : `Latest loss in ${formatEpochWindowScope(
                 selectedEpochWindow,
               )}`,
       icon: TriangleAlert,

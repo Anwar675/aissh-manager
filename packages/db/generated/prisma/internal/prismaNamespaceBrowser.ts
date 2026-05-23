@@ -51,7 +51,8 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  SSHRemote: 'SSHRemote'
+  SSHRemote: 'SSHRemote',
+  AutoStop: 'AutoStop'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -96,6 +97,21 @@ export const SSHRemoteScalarFieldEnum = {
 } as const
 
 export type SSHRemoteScalarFieldEnum = (typeof SSHRemoteScalarFieldEnum)[keyof typeof SSHRemoteScalarFieldEnum]
+
+
+export const AutoStopScalarFieldEnum = {
+  id: 'id',
+  sshRemoteId: 'sshRemoteId',
+  targetType: 'targetType',
+  scheduledAt: 'scheduledAt',
+  status: 'status',
+  executedAt: 'executedAt',
+  error: 'error',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AutoStopScalarFieldEnum = (typeof AutoStopScalarFieldEnum)[keyof typeof AutoStopScalarFieldEnum]
 
 
 export const SortOrder = {

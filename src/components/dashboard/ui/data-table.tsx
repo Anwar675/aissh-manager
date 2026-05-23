@@ -45,6 +45,7 @@ import {
   type ColumnDef,
   type ColumnFiltersState,
   type Row,
+  type RowSelectionState,
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
@@ -72,7 +73,6 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from "@/components/ui/drawer";
 import {
   DropdownMenu,
@@ -101,6 +101,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GoDotFill } from "react-icons/go";
+import { AutoStopControl } from "./auto-stop";
 import { CreateSSHDialog } from "./create";
 import {
   formatDate,
@@ -159,6 +160,8 @@ type EditSSHValues = {
   sshKeyName: string;
   passphrase: string;
 };
+
+type CheckboxValue = boolean | "indeterminate";
 
 const sortActiveFirst = (items: VirtualMachine[]) =>
   [...items].sort(
@@ -224,28 +227,89 @@ const getTerminalProcessingLabel = (item: VirtualMachine) => {
   return `Running ${Math.round(item.terminalProgressPercent)}%`;
 };
 
+const RowSelectCheckbox = React.memo(function RowSelectCheckbox({
+  id,
+  checked,
+  onSelectRow,
+}: {
+  id: string;
+  checked: boolean;
+  onSelectRow: (id: string, selected: boolean) => void;
+}) {
+  const [localChecked, setLocalChecked] = React.useState(checked);
+
+  return (
+    <Checkbox
+      checked={localChecked}
+      onCheckedChange={(value) => {
+        const selected = value === true;
+        setLocalChecked(selected);
+        React.startTransition(() => {
+          onSelectRow(id, selected);
+        });
+      }}
+      aria-label="Select row"
+    />
+  );
+});
+
+const PageSelectCheckbox = React.memo(function PageSelectCheckbox({
+  checked,
+  pageRowIds,
+  onSelectPageRows,
+}: {
+  checked: CheckboxValue;
+  pageRowIds: string[];
+  onSelectPageRows: (ids: string[], selected: boolean) => void;
+}) {
+  const [localChecked, setLocalChecked] =
+    React.useState<CheckboxValue>(checked);
+
+  return (
+    <Checkbox
+      checked={localChecked}
+      onCheckedChange={(value) => {
+        const selected = value === true;
+        setLocalChecked(selected);
+        React.startTransition(() => {
+          onSelectPageRows(pageRowIds, selected);
+        });
+      }}
+      aria-label="Select all"
+    />
+  );
+});
+
 type TableActions = {
   connectingIds: Set<string>;
   deletingIds: Set<string>;
+  selectedIds: Set<string>;
   startingIds: Set<string>;
   stoppingIds: Set<string>;
   onConnect: (item: VirtualMachine) => void;
   onDelete: (item: VirtualMachine) => void;
   onEdit: (item: VirtualMachine) => void;
+  onSelectPageRows: (ids: string[], selected: boolean) => void;
+  onSelectRow: (id: string, selected: boolean) => void;
   onStart: (item: VirtualMachine) => void;
   onStop: (item: VirtualMachine) => void;
+  onViewDetails: (item: VirtualMachine) => void;
 };
 
 const createColumns = ({
   connectingIds,
   deletingIds,
+  selectedIds,
   startingIds,
   stoppingIds,
   onConnect,
   onDelete,
   onEdit,
+  onSelectPageRows,
+  onSelectRow,
   onStart,
   onStop,
+  onViewDetails,
 }: TableActions): ColumnDef<VirtualMachine>[] => [
   {
     id: "drag",
@@ -254,24 +318,39 @@ const createColumns = ({
   },
   {
     id: "select",
-    header: ({ table }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      </div>
-    ),
+    header: ({ table }) => {
+      const pageRowIds = table
+        .getPaginationRowModel()
+        .rows.map((row) => row.original.id);
+      const selectedPageRowCount = pageRowIds.filter((id) =>
+        selectedIds.has(id),
+      ).length;
+      const isAllPageRowsSelected =
+        pageRowIds.length > 0 && selectedPageRowCount === pageRowIds.length;
+      const isSomePageRowsSelected =
+        selectedPageRowCount > 0 && !isAllPageRowsSelected;
+      const checked =
+        isAllPageRowsSelected ||
+        (isSomePageRowsSelected && "indeterminate");
+
+      return (
+        <div className="flex items-center justify-center">
+          <PageSelectCheckbox
+            key={`${pageRowIds.join("|")}-${checked}`}
+            checked={checked}
+            pageRowIds={pageRowIds}
+            onSelectPageRows={onSelectPageRows}
+          />
+        </div>
+      );
+    },
     cell: ({ row }) => (
       <div className="flex items-center justify-center">
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
+        <RowSelectCheckbox
+          key={`${row.original.id}-${selectedIds.has(row.original.id)}`}
+          id={row.original.id}
+          checked={selectedIds.has(row.original.id)}
+          onSelectRow={onSelectRow}
         />
       </div>
     ),
@@ -283,17 +362,9 @@ const createColumns = ({
     header: "Name",
     cell: ({ row }) => {
       return (
-        <TableCellViewer
+        <MachineNameButton
           item={row.original}
-          isConnecting={connectingIds.has(row.original.id)}
-          isDeleting={deletingIds.has(row.original.id)}
-          isStarting={startingIds.has(row.original.id)}
-          isStopping={stoppingIds.has(row.original.id)}
-          onConnect={onConnect}
-          onDelete={onDelete}
-          onEdit={onEdit}
-          onStart={onStart}
-          onStop={onStop}
+          onViewDetails={onViewDetails}
         />
       );
     },
@@ -436,14 +507,20 @@ const createColumns = ({
   },
 ];
 
-function DraggableRow({ row }: { row: Row<VirtualMachine> }) {
+function DraggableRow({
+  row,
+  isSelected,
+}: {
+  row: Row<VirtualMachine>;
+  isSelected: boolean;
+}) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
     id: row.original.id,
   });
 
   return (
     <TableRow
-      data-state={row.getIsSelected() && "selected"}
+      data-state={isSelected && "selected"}
       data-dragging={isDragging}
       ref={setNodeRef}
       className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
@@ -771,7 +848,7 @@ function EditSSHDialog({
 export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
   const router = useRouter();
   const [data, setData] = React.useState(() => sortActiveFirst(initialData));
-  const [rowSelection, setRowSelection] = React.useState({});
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -790,6 +867,9 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
   const [stoppingIds, setStoppingIds] = React.useState<Set<string>>(
     () => new Set(),
   );
+  const [selectedDetailsId, setSelectedDetailsId] = React.useState<
+    string | null
+  >(null);
   const [editingItem, setEditingItem] = React.useState<VirtualMachine | null>(
     null,
   );
@@ -809,6 +889,23 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
   const dataIds = React.useMemo<UniqueIdentifier[]>(
     () => data?.map(({ id }) => id) || [],
     [data],
+  );
+  const selectedIds = React.useMemo(
+    () =>
+      new Set(
+        Object.entries(rowSelection)
+          .filter(([, selected]) => selected)
+          .map(([id]) => id),
+      ),
+    [rowSelection],
+  );
+  const selectedIdList = React.useMemo(
+    () => Array.from(selectedIds),
+    [selectedIds],
+  );
+  const selectedDetailsItem = React.useMemo(
+    () => data.find((item) => item.id === selectedDetailsId) ?? null,
+    [data, selectedDetailsId],
   );
 
   React.useEffect(() => {
@@ -1036,6 +1133,42 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
     [router],
   );
 
+  const handleSelectRow = React.useCallback(
+    (id: string, selected: boolean) => {
+      setRowSelection((current) => {
+        const next: RowSelectionState = { ...current };
+
+        if (selected) {
+          next[id] = true;
+        } else {
+          delete next[id];
+        }
+
+        return next;
+      });
+    },
+    [],
+  );
+
+  const handleSelectPageRows = React.useCallback(
+    (ids: string[], selected: boolean) => {
+      setRowSelection((current) => {
+        const next: RowSelectionState = { ...current };
+
+        for (const id of ids) {
+          if (selected) {
+            next[id] = true;
+          } else {
+            delete next[id];
+          }
+        }
+
+        return next;
+      });
+    },
+    [],
+  );
+
   const handleStop = React.useCallback(
     async (item: VirtualMachine) => {
       setStoppingIds((current) => new Set(current).add(item.id));
@@ -1190,28 +1323,40 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
     [router],
   );
 
+  const handleViewDetails = React.useCallback((item: VirtualMachine) => {
+    setSelectedDetailsId(item.id);
+  }, []);
+
   const columns = React.useMemo(
     () =>
       createColumns({
         connectingIds,
         deletingIds,
+        selectedIds,
         startingIds,
         stoppingIds,
         onConnect: handleConnect,
         onDelete: handleDelete,
         onEdit: setEditingItem,
+        onSelectPageRows: handleSelectPageRows,
+        onSelectRow: handleSelectRow,
         onStart: handleStart,
         onStop: handleStop,
+        onViewDetails: handleViewDetails,
       }),
     [
       connectingIds,
       deletingIds,
+      selectedIds,
       startingIds,
       stoppingIds,
       handleConnect,
       handleDelete,
+      handleSelectPageRows,
+      handleSelectRow,
       handleStart,
       handleStop,
+      handleViewDetails,
     ],
   );
 
@@ -1221,13 +1366,10 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
     state: {
       sorting,
       columnVisibility,
-      rowSelection,
       columnFilters,
       pagination,
     },
     getRowId: (row) => row.id.toString(),
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -1302,6 +1444,30 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
             onSave={handleEdit}
           />
         ) : null}
+        {selectedDetailsItem ? (
+          <MachineDetailsDrawer
+            key={selectedDetailsItem.id}
+            item={selectedDetailsItem}
+            open={selectedDetailsItem !== null}
+            isConnecting={connectingIds.has(selectedDetailsItem.id)}
+            isDeleting={deletingIds.has(selectedDetailsItem.id)}
+            isStarting={startingIds.has(selectedDetailsItem.id)}
+            isStopping={stoppingIds.has(selectedDetailsItem.id)}
+            onOpenChange={(open) => {
+              if (!open) {
+                setSelectedDetailsId(null);
+              }
+            }}
+            onConnect={handleConnect}
+            onDelete={handleDelete}
+            onEdit={(item) => {
+              setEditingItem(item);
+              setSelectedDetailsId(null);
+            }}
+            onStart={handleStart}
+            onStop={handleStop}
+          />
+        ) : null}
         <Label htmlFor="view-selector" className="sr-only">
           View
         </Label>
@@ -1349,6 +1515,10 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
+          <AutoStopControl
+            selectedIds={selectedIdList}
+            totalCount={data.length}
+          />
           <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
             <IconPlus />
             <span className="hidden lg:inline">Add New</span>
@@ -1393,7 +1563,11 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
                     strategy={verticalListSortingStrategy}
                   >
                     {table.getRowModel().rows.map((row) => (
-                      <DraggableRow key={row.id} row={row} />
+                      <DraggableRow
+                        key={row.id}
+                        row={row}
+                        isSelected={selectedIds.has(row.original.id)}
+                      />
                     ))}
                   </SortableContext>
                 ) : (
@@ -1412,7 +1586,12 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
         </div>
         <div className="flex items-center justify-between px-4">
           <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {
+              table
+                .getFilteredRowModel()
+                .rows.filter((row) => selectedIds.has(row.original.id)).length
+            }{" "}
+            of{" "}
             {table.getFilteredRowModel().rows.length} row(s) selected.
           </div>
           <div className="flex w-full items-center gap-8 lg:w-fit">
@@ -1492,12 +1671,32 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
   );
 }
 
-function TableCellViewer({
+function MachineNameButton({
   item,
+  onViewDetails,
+}: {
+  item: VirtualMachine;
+  onViewDetails: (item: VirtualMachine) => void;
+}) {
+  return (
+    <Button
+      variant="link"
+      className="w-fit px-0 text-left text-foreground"
+      onClick={() => onViewDetails(item)}
+    >
+      {item.name}
+    </Button>
+  );
+}
+
+function MachineDetailsDrawer({
+  item,
+  open,
   isConnecting,
   isDeleting,
   isStarting,
   isStopping,
+  onOpenChange,
   onConnect,
   onDelete,
   onEdit,
@@ -1505,10 +1704,12 @@ function TableCellViewer({
   onStop,
 }: {
   item: VirtualMachine;
+  open: boolean;
   isConnecting: boolean;
   isDeleting: boolean;
   isStarting: boolean;
   isStopping: boolean;
+  onOpenChange: (open: boolean) => void;
   onConnect: (item: VirtualMachine) => void;
   onDelete: (item: VirtualMachine) => void;
   onEdit: (item: VirtualMachine) => void;
@@ -1520,12 +1721,11 @@ function TableCellViewer({
   const { displayCurrency, toggleDisplayCurrency } = useDisplayCurrency();
 
   return (
-    <Drawer direction={isMobile ? "bottom" : "right"}>
-      <DrawerTrigger asChild>
-        <Button variant="link" className="w-fit px-0 text-left text-foreground">
-          {item.name}
-        </Button>
-      </DrawerTrigger>
+    <Drawer
+      open={open}
+      onOpenChange={onOpenChange}
+      direction={isMobile ? "bottom" : "right"}
+    >
       <DrawerContent className="max-w-md">
         <div className="flex flex-col h-full">
           {/* Header */}

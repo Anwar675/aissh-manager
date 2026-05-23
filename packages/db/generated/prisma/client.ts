@@ -46,3 +46,8 @@ export { Prisma }
  * 
  */
 export type SSHRemote = Prisma.SSHRemoteModel
+/**
+ * Model AutoStop
+ * 
+ */
+export type AutoStop = Prisma.AutoStopModel

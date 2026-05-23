@@ -40,9 +40,43 @@ model SSHRemote {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  autoStops AutoStop[]
 }
 
 enum SSHAuthType {
   PASSWORD
   PRIVATE_KEY
+}
+
+model AutoStop {
+  id String @id @default(cuid())
+
+  sshRemoteId String?
+  sshRemote   SSHRemote? @relation(fields: [sshRemoteId], references: [id], onDelete: Cascade)
+
+  targetType  AutoStopTargetType @default(SSH_REMOTE)
+  scheduledAt DateTime
+  status      AutoStopStatus     @default(PENDING)
+  executedAt  DateTime?
+  error       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, scheduledAt])
+  @@index([sshRemoteId, status])
+}
+
+enum AutoStopTargetType {
+  SSH_REMOTE
+  ALL_ACTIVE
+}
+
+enum AutoStopStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  CANCELED
+  FAILED
 }

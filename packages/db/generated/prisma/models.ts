@@ -9,4 +9,5 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/SSHRemote'
+export type * from './models/AutoStop'
 export type * from './commonInputTypes'

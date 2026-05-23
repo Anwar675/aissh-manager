@@ -219,6 +219,40 @@ export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedDateTimeFilter<$PrismaModel>
 }
 
+export type EnumAutoStopTargetTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.AutoStopTargetType | Prisma.EnumAutoStopTargetTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.AutoStopTargetType[] | Prisma.ListEnumAutoStopTargetTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AutoStopTargetType[] | Prisma.ListEnumAutoStopTargetTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAutoStopTargetTypeFilter<$PrismaModel> | $Enums.AutoStopTargetType
+}
+
+export type EnumAutoStopStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.AutoStopStatus | Prisma.EnumAutoStopStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AutoStopStatus[] | Prisma.ListEnumAutoStopStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AutoStopStatus[] | Prisma.ListEnumAutoStopStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAutoStopStatusFilter<$PrismaModel> | $Enums.AutoStopStatus
+}
+
+export type EnumAutoStopTargetTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AutoStopTargetType | Prisma.EnumAutoStopTargetTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.AutoStopTargetType[] | Prisma.ListEnumAutoStopTargetTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AutoStopTargetType[] | Prisma.ListEnumAutoStopTargetTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAutoStopTargetTypeWithAggregatesFilter<$PrismaModel> | $Enums.AutoStopTargetType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAutoStopTargetTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAutoStopTargetTypeFilter<$PrismaModel>
+}
+
+export type EnumAutoStopStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AutoStopStatus | Prisma.EnumAutoStopStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AutoStopStatus[] | Prisma.ListEnumAutoStopStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AutoStopStatus[] | Prisma.ListEnumAutoStopStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAutoStopStatusWithAggregatesFilter<$PrismaModel> | $Enums.AutoStopStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAutoStopStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAutoStopStatusFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -435,6 +469,40 @@ export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedDateTimeFilter<$PrismaModel>
   _max?: Prisma.NestedDateTimeFilter<$PrismaModel>
+}
+
+export type NestedEnumAutoStopTargetTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.AutoStopTargetType | Prisma.EnumAutoStopTargetTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.AutoStopTargetType[] | Prisma.ListEnumAutoStopTargetTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AutoStopTargetType[] | Prisma.ListEnumAutoStopTargetTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAutoStopTargetTypeFilter<$PrismaModel> | $Enums.AutoStopTargetType
+}
+
+export type NestedEnumAutoStopStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.AutoStopStatus | Prisma.EnumAutoStopStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AutoStopStatus[] | Prisma.ListEnumAutoStopStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AutoStopStatus[] | Prisma.ListEnumAutoStopStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAutoStopStatusFilter<$PrismaModel> | $Enums.AutoStopStatus
+}
+
+export type NestedEnumAutoStopTargetTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AutoStopTargetType | Prisma.EnumAutoStopTargetTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.AutoStopTargetType[] | Prisma.ListEnumAutoStopTargetTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AutoStopTargetType[] | Prisma.ListEnumAutoStopTargetTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAutoStopTargetTypeWithAggregatesFilter<$PrismaModel> | $Enums.AutoStopTargetType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAutoStopTargetTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAutoStopTargetTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumAutoStopStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AutoStopStatus | Prisma.EnumAutoStopStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AutoStopStatus[] | Prisma.ListEnumAutoStopStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AutoStopStatus[] | Prisma.ListEnumAutoStopStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAutoStopStatusWithAggregatesFilter<$PrismaModel> | $Enums.AutoStopStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAutoStopStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAutoStopStatusFilter<$PrismaModel>
 }
 
 

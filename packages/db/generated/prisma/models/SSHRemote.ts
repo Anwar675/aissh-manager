@@ -356,6 +356,7 @@ export type SSHRemoteWhereInput = {
   connectedAt?: Prisma.DateTimeNullableFilter<"SSHRemote"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"SSHRemote"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"SSHRemote"> | Date | string
+  autoStops?: Prisma.AutoStopListRelationFilter
 }
 
 export type SSHRemoteOrderByWithRelationInput = {
@@ -381,6 +382,7 @@ export type SSHRemoteOrderByWithRelationInput = {
   connectedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  autoStops?: Prisma.AutoStopOrderByRelationAggregateInput
 }
 
 export type SSHRemoteWhereUniqueInput = Prisma.AtLeast<{
@@ -409,6 +411,7 @@ export type SSHRemoteWhereUniqueInput = Prisma.AtLeast<{
   connectedAt?: Prisma.DateTimeNullableFilter<"SSHRemote"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"SSHRemote"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"SSHRemote"> | Date | string
+  autoStops?: Prisma.AutoStopListRelationFilter
 }, "id">
 
 export type SSHRemoteOrderByWithAggregationInput = {
@@ -492,6 +495,7 @@ export type SSHRemoteCreateInput = {
   connectedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  autoStops?: Prisma.AutoStopCreateNestedManyWithoutSshRemoteInput
 }
 
 export type SSHRemoteUncheckedCreateInput = {
@@ -517,6 +521,7 @@ export type SSHRemoteUncheckedCreateInput = {
   connectedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  autoStops?: Prisma.AutoStopUncheckedCreateNestedManyWithoutSshRemoteInput
 }
 
 export type SSHRemoteUpdateInput = {
@@ -542,6 +547,7 @@ export type SSHRemoteUpdateInput = {
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  autoStops?: Prisma.AutoStopUpdateManyWithoutSshRemoteNestedInput
 }
 
 export type SSHRemoteUncheckedUpdateInput = {
@@ -567,6 +573,7 @@ export type SSHRemoteUncheckedUpdateInput = {
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  autoStops?: Prisma.AutoStopUncheckedUpdateManyWithoutSshRemoteNestedInput
 }
 
 export type SSHRemoteCreateManyInput = {
@@ -729,6 +736,11 @@ export type SSHRemoteSumOrderByAggregateInput = {
   pricePerHour?: Prisma.SortOrder
 }
 
+export type SSHRemoteNullableScalarRelationFilter = {
+  is?: Prisma.SSHRemoteWhereInput | null
+  isNot?: Prisma.SSHRemoteWhereInput | null
+}
+
 export type StringFieldUpdateOperationsInput = {
   set?: string
 }
@@ -769,6 +781,167 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type SSHRemoteCreateNestedOneWithoutAutoStopsInput = {
+  create?: Prisma.XOR<Prisma.SSHRemoteCreateWithoutAutoStopsInput, Prisma.SSHRemoteUncheckedCreateWithoutAutoStopsInput>
+  connectOrCreate?: Prisma.SSHRemoteCreateOrConnectWithoutAutoStopsInput
+  connect?: Prisma.SSHRemoteWhereUniqueInput
+}
+
+export type SSHRemoteUpdateOneWithoutAutoStopsNestedInput = {
+  create?: Prisma.XOR<Prisma.SSHRemoteCreateWithoutAutoStopsInput, Prisma.SSHRemoteUncheckedCreateWithoutAutoStopsInput>
+  connectOrCreate?: Prisma.SSHRemoteCreateOrConnectWithoutAutoStopsInput
+  upsert?: Prisma.SSHRemoteUpsertWithoutAutoStopsInput
+  disconnect?: Prisma.SSHRemoteWhereInput | boolean
+  delete?: Prisma.SSHRemoteWhereInput | boolean
+  connect?: Prisma.SSHRemoteWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SSHRemoteUpdateToOneWithWhereWithoutAutoStopsInput, Prisma.SSHRemoteUpdateWithoutAutoStopsInput>, Prisma.SSHRemoteUncheckedUpdateWithoutAutoStopsInput>
+}
+
+export type SSHRemoteCreateWithoutAutoStopsInput = {
+  id?: string
+  name: string
+  description?: string | null
+  host: string
+  port?: number
+  username: string
+  authType: $Enums.SSHAuthType
+  password?: string | null
+  privateKey?: string | null
+  passphrase?: string | null
+  provider?: string | null
+  machineType?: string | null
+  instanceId?: string | null
+  providerApiKey?: string | null
+  isActive?: boolean
+  pricePerHour?: number | null
+  currency?: string
+  usageStartedAt?: Date | string | null
+  usageEndedAt?: Date | string | null
+  connectedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type SSHRemoteUncheckedCreateWithoutAutoStopsInput = {
+  id?: string
+  name: string
+  description?: string | null
+  host: string
+  port?: number
+  username: string
+  authType: $Enums.SSHAuthType
+  password?: string | null
+  privateKey?: string | null
+  passphrase?: string | null
+  provider?: string | null
+  machineType?: string | null
+  instanceId?: string | null
+  providerApiKey?: string | null
+  isActive?: boolean
+  pricePerHour?: number | null
+  currency?: string
+  usageStartedAt?: Date | string | null
+  usageEndedAt?: Date | string | null
+  connectedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type SSHRemoteCreateOrConnectWithoutAutoStopsInput = {
+  where: Prisma.SSHRemoteWhereUniqueInput
+  create: Prisma.XOR<Prisma.SSHRemoteCreateWithoutAutoStopsInput, Prisma.SSHRemoteUncheckedCreateWithoutAutoStopsInput>
+}
+
+export type SSHRemoteUpsertWithoutAutoStopsInput = {
+  update: Prisma.XOR<Prisma.SSHRemoteUpdateWithoutAutoStopsInput, Prisma.SSHRemoteUncheckedUpdateWithoutAutoStopsInput>
+  create: Prisma.XOR<Prisma.SSHRemoteCreateWithoutAutoStopsInput, Prisma.SSHRemoteUncheckedCreateWithoutAutoStopsInput>
+  where?: Prisma.SSHRemoteWhereInput
+}
+
+export type SSHRemoteUpdateToOneWithWhereWithoutAutoStopsInput = {
+  where?: Prisma.SSHRemoteWhereInput
+  data: Prisma.XOR<Prisma.SSHRemoteUpdateWithoutAutoStopsInput, Prisma.SSHRemoteUncheckedUpdateWithoutAutoStopsInput>
+}
+
+export type SSHRemoteUpdateWithoutAutoStopsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  host?: Prisma.StringFieldUpdateOperationsInput | string
+  port?: Prisma.IntFieldUpdateOperationsInput | number
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  authType?: Prisma.EnumSSHAuthTypeFieldUpdateOperationsInput | $Enums.SSHAuthType
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  privateKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passphrase?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  machineType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  instanceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  providerApiKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pricePerHour?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  usageStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  usageEndedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type SSHRemoteUncheckedUpdateWithoutAutoStopsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  host?: Prisma.StringFieldUpdateOperationsInput | string
+  port?: Prisma.IntFieldUpdateOperationsInput | number
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  authType?: Prisma.EnumSSHAuthTypeFieldUpdateOperationsInput | $Enums.SSHAuthType
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  privateKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passphrase?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  machineType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  instanceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  providerApiKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pricePerHour?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  usageStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  usageEndedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+
+/**
+ * Count Type SSHRemoteCountOutputType
+ */
+
+export type SSHRemoteCountOutputType = {
+  autoStops: number
+}
+
+export type SSHRemoteCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  autoStops?: boolean | SSHRemoteCountOutputTypeCountAutoStopsArgs
+}
+
+/**
+ * SSHRemoteCountOutputType without action
+ */
+export type SSHRemoteCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SSHRemoteCountOutputType
+   */
+  select?: Prisma.SSHRemoteCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * SSHRemoteCountOutputType without action
+ */
+export type SSHRemoteCountOutputTypeCountAutoStopsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AutoStopWhereInput
+}
 
 
 export type SSHRemoteSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -794,6 +967,8 @@ export type SSHRemoteSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   connectedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  autoStops?: boolean | Prisma.SSHRemote$autoStopsArgs<ExtArgs>
+  _count?: boolean | Prisma.SSHRemoteCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["sSHRemote"]>
 
 export type SSHRemoteSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -872,10 +1047,18 @@ export type SSHRemoteSelectScalar = {
 }
 
 export type SSHRemoteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "host" | "port" | "username" | "authType" | "password" | "privateKey" | "passphrase" | "provider" | "machineType" | "instanceId" | "providerApiKey" | "isActive" | "pricePerHour" | "currency" | "usageStartedAt" | "usageEndedAt" | "connectedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["sSHRemote"]>
+export type SSHRemoteInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  autoStops?: boolean | Prisma.SSHRemote$autoStopsArgs<ExtArgs>
+  _count?: boolean | Prisma.SSHRemoteCountOutputTypeDefaultArgs<ExtArgs>
+}
+export type SSHRemoteIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type SSHRemoteIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $SSHRemotePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "SSHRemote"
-  objects: {}
+  objects: {
+    autoStops: Prisma.$AutoStopPayload<ExtArgs>[]
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     name: string
@@ -1293,6 +1476,7 @@ readonly fields: SSHRemoteFieldRefs;
  */
 export interface Prisma__SSHRemoteClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  autoStops<T extends Prisma.SSHRemote$autoStopsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SSHRemote$autoStopsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AutoStopPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1361,6 +1545,10 @@ export type SSHRemoteFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.Int
    */
   omit?: Prisma.SSHRemoteOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SSHRemoteInclude<ExtArgs> | null
+  /**
    * Filter, which SSHRemote to fetch.
    */
   where: Prisma.SSHRemoteWhereUniqueInput
@@ -1379,6 +1567,10 @@ export type SSHRemoteFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensi
    */
   omit?: Prisma.SSHRemoteOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SSHRemoteInclude<ExtArgs> | null
+  /**
    * Filter, which SSHRemote to fetch.
    */
   where: Prisma.SSHRemoteWhereUniqueInput
@@ -1396,6 +1588,10 @@ export type SSHRemoteFindFirstArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Omit specific fields from the SSHRemote
    */
   omit?: Prisma.SSHRemoteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SSHRemoteInclude<ExtArgs> | null
   /**
    * Filter, which SSHRemote to fetch.
    */
@@ -1445,6 +1641,10 @@ export type SSHRemoteFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensio
    */
   omit?: Prisma.SSHRemoteOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SSHRemoteInclude<ExtArgs> | null
+  /**
    * Filter, which SSHRemote to fetch.
    */
   where?: Prisma.SSHRemoteWhereInput
@@ -1492,6 +1692,10 @@ export type SSHRemoteFindManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
    * Omit specific fields from the SSHRemote
    */
   omit?: Prisma.SSHRemoteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SSHRemoteInclude<ExtArgs> | null
   /**
    * Filter, which SSHRemotes to fetch.
    */
@@ -1541,6 +1745,10 @@ export type SSHRemoteCreateArgs<ExtArgs extends runtime.Types.Extensions.Interna
    */
   omit?: Prisma.SSHRemoteOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SSHRemoteInclude<ExtArgs> | null
+  /**
    * The data needed to create a SSHRemote.
    */
   data: Prisma.XOR<Prisma.SSHRemoteCreateInput, Prisma.SSHRemoteUncheckedCreateInput>
@@ -1588,6 +1796,10 @@ export type SSHRemoteUpdateArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Omit specific fields from the SSHRemote
    */
   omit?: Prisma.SSHRemoteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SSHRemoteInclude<ExtArgs> | null
   /**
    * The data needed to update a SSHRemote.
    */
@@ -1655,6 +1867,10 @@ export type SSHRemoteUpsertArgs<ExtArgs extends runtime.Types.Extensions.Interna
    */
   omit?: Prisma.SSHRemoteOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SSHRemoteInclude<ExtArgs> | null
+  /**
    * The filter to search for the SSHRemote to update in case it exists.
    */
   where: Prisma.SSHRemoteWhereUniqueInput
@@ -1681,6 +1897,10 @@ export type SSHRemoteDeleteArgs<ExtArgs extends runtime.Types.Extensions.Interna
    */
   omit?: Prisma.SSHRemoteOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SSHRemoteInclude<ExtArgs> | null
+  /**
    * Filter which SSHRemote to delete.
    */
   where: Prisma.SSHRemoteWhereUniqueInput
@@ -1701,6 +1921,30 @@ export type SSHRemoteDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Int
 }
 
 /**
+ * SSHRemote.autoStops
+ */
+export type SSHRemote$autoStopsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AutoStop
+   */
+  select?: Prisma.AutoStopSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AutoStop
+   */
+  omit?: Prisma.AutoStopOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AutoStopInclude<ExtArgs> | null
+  where?: Prisma.AutoStopWhereInput
+  orderBy?: Prisma.AutoStopOrderByWithRelationInput | Prisma.AutoStopOrderByWithRelationInput[]
+  cursor?: Prisma.AutoStopWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AutoStopScalarFieldEnum | Prisma.AutoStopScalarFieldEnum[]
+}
+
+/**
  * SSHRemote without action
  */
 export type SSHRemoteDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1712,4 +1956,8 @@ export type SSHRemoteDefaultArgs<ExtArgs extends runtime.Types.Extensions.Intern
    * Omit specific fields from the SSHRemote
    */
   omit?: Prisma.SSHRemoteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SSHRemoteInclude<ExtArgs> | null
 }

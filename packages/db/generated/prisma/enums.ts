@@ -15,3 +15,22 @@ export const SSHAuthType = {
 } as const
 
 export type SSHAuthType = (typeof SSHAuthType)[keyof typeof SSHAuthType]
+
+
+export const AutoStopTargetType = {
+  SSH_REMOTE: 'SSH_REMOTE',
+  ALL_ACTIVE: 'ALL_ACTIVE'
+} as const
+
+export type AutoStopTargetType = (typeof AutoStopTargetType)[keyof typeof AutoStopTargetType]
+
+
+export const AutoStopStatus = {
+  PENDING: 'PENDING',
+  RUNNING: 'RUNNING',
+  COMPLETED: 'COMPLETED',
+  CANCELED: 'CANCELED',
+  FAILED: 'FAILED'
+} as const
+
+export type AutoStopStatus = (typeof AutoStopStatus)[keyof typeof AutoStopStatus]
