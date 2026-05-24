@@ -102,6 +102,9 @@ importers:
       '@types/node':
         specifier: ^20
         version: 20.19.41
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       '@types/react':
         specifier: ^19
         version: 19.2.14

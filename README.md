@@ -33,6 +33,32 @@ AISSH Manager là dashboard Next.js dùng để quản lý SSH connection, máy 
 - `/dashboard/[dasboardId]` - GPU metrics, active machine check, terminal controls và usage panel cho một máy.
 - `/analytis/[idanalytics]` - training analytics dashboard dựa trên terminal output.
 
+## Screenshots
+
+### Virtual Machines Dashboard
+
+![Virtual Machines Dashboard](/dashboard.png)
+
+Dashboard chính để xem toàn bộ SSH remote, trạng thái active/saved, provider, machine type, processing state, pagination và các thao tác như customize columns, auto-stop, add new.
+
+### GPU Metrics Và Terminal
+
+![GPU Metrics and Terminal](/public/terminal.png)
+
+Trang chi tiết máy active hiển thị VRAM, temperature, power, utilization, active job, training progress, live terminal logs và các thao tác pause, restart terminal, analytics.
+
+### Auto Stop Scheduler
+
+![Auto Stop Scheduler](/public/autostop.png)
+
+Dialog hẹn giờ stop provider và disconnect SSH cho máy được chọn hoặc toàn bộ máy active.
+
+### Training Analytics Dashboard
+
+![Training Analytics Dashboard](/public/analytics.png)
+
+Training analytics dashboard parse real-time terminal stream thành current epoch, current loss, best loss, validation loss, loss chart, learning rate schedule và performance metrics.
+
 ## Cấu Trúc Dự Án
 
 ```text
@@ -154,5 +180,5 @@ pnpm lint     # Chạy ESLint
 
 ```bash
 pnpm exec prisma generate --schema packages/db/prisma/schema.prisma
-pnpm exec prisma migrate dev --schema packages/db/prisma/schema.prisma
+pnpm exec prisma migrate dev --config packages/db/prisma.config.ts
 ```
