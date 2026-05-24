@@ -37,7 +37,7 @@ AISSH Manager là dashboard Next.js dùng để quản lý SSH connection, máy 
 
 ### Virtual Machines Dashboard
 
-![Virtual Machines Dashboard](/dashboard.png)
+![Virtual Machines Dashboard](/public/dashboard.png)
 
 Dashboard chính để xem toàn bộ SSH remote, trạng thái active/saved, provider, machine type, processing state, pagination và các thao tác như customize columns, auto-stop, add new.
 
