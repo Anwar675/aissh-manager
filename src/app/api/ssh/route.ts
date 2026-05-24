@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../packages/db/src";
+import { deleteSSHRemotesByIds } from "../../../../services/ssh/delete-remote";
 import { getSSHSessionTerminalState } from "../../../../services/ssh/ssh-session-manager";
 
 export const dynamic = "force-dynamic";
@@ -197,23 +198,24 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const existingRemotes = await prisma.sSHRemote.findMany({
-      where: {
-        id: {
-          in: ids,
-        }
-      },
-      select: {
-        id: true,
+    const deleted = await deleteSSHRemotesByIds(ids);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ids: deleted.ids,
+        count: deleted.count,
+        failures: deleted.failures,
       },
     });
-    const existingIds = existingRemotes.map((remote) => remote.id);
+  } catch (error) {
+    console.error("Failed to delete SSH remotes", error);
 
-    if (existingIds.length === 0) {
+    if (error instanceof Error && error.message === "SSH connections not found") {
       return NextResponse.json(
         {
           success: false,
-          error: "SSH connections not found",
+          error: error.message,
         },
         {
           status: 404,
@@ -221,28 +223,13 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const deleted = await prisma.sSHRemote.deleteMany({
-      where: {
-        id: {
-          in: existingIds,
-        },
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        ids: existingIds,
-        count: deleted.count,
-      },
-    });
-  } catch (error) {
-    console.error("Failed to delete SSH remotes", error);
-
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to delete SSH connections",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to delete SSH connections",
       },
       {
         status: 500,

@@ -110,4 +110,45 @@ export class VastAIProvider extends BaseProvider {
       );
     }
   }
+
+  async destroyInstance(): Promise<StopInstanceResult> {
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/instances/${this.instanceId}/`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+        },
+      );
+
+      if (response.status === 404) {
+        return {
+          success: true,
+          message: "Vast AI instance was already destroyed or not found",
+          instanceId: this.instanceId,
+        };
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to destroy instance: ${response.status} ${response.statusText}${
+            errorText ? ` - ${errorText}` : ""
+          }`,
+        );
+      }
+
+      return {
+        success: true,
+        message: "Vast AI instance destroyed successfully",
+        instanceId: this.instanceId,
+      };
+    } catch (error) {
+      throw new Error(
+        `Vast AI destroy failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
 }

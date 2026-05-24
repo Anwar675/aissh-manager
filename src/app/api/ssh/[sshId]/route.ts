@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "../../../../../packages/db/src";
+import { deleteSSHRemoteById } from "../../../../../services/ssh/delete-remote";
 import { getSSHSessionTerminalState } from "../../../../../services/ssh/ssh-session-manager";
 
 export const dynamic = "force-dynamic";
@@ -258,36 +259,7 @@ export async function DELETE(
   const { sshId } = await params;
 
   try {
-    const existing = await prisma.sSHRemote.findUnique({
-      where: {
-        id: sshId,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!existing) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "SSH connection not found",
-        },
-        {
-          status: 404,
-        },
-      );
-    }
-
-    const remote = await prisma.sSHRemote.delete({
-      where: {
-        id: sshId,
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
+    const remote = await deleteSSHRemoteById(sshId);
 
     return NextResponse.json({
       success: true,
@@ -296,10 +268,25 @@ export async function DELETE(
   } catch (error) {
     console.error("Failed to delete SSH remote", error);
 
+    if (error instanceof Error && error.message === "SSH connection not found") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message,
+        },
+        {
+          status: 404,
+        },
+      );
+    }
+
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to delete SSH connection",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to delete SSH connection",
       },
       {
         status: 500,

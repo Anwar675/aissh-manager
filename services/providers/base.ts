@@ -30,4 +30,8 @@ export abstract class BaseProvider {
   async getInstanceStatus(): Promise<{ status: string }> {
     throw new Error("Get instance status not implemented for this provider");
   }
+
+  async destroyInstance(): Promise<StopInstanceResult> {
+    throw new Error("Destroy instance not implemented for this provider");
+  }
 }

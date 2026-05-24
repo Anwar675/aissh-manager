@@ -1047,8 +1047,12 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
 
   const handleDelete = React.useCallback(
     async (item: VirtualMachine) => {
+      const destroysVastInstance =
+        item.provider === "vast-ai" && Boolean(item.instanceId);
       const confirmed = window.confirm(
-        `Delete SSH connection "${item.name}"? This cannot be undone.`,
+        destroysVastInstance
+          ? `Delete SSH connection "${item.name}" and destroy its Vast AI instance? This cannot be undone and will delete the instance data.`
+          : `Delete SSH connection "${item.name}"? This cannot be undone.`,
       );
 
       if (!confirmed) {
@@ -1105,10 +1109,23 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
       return;
     }
 
+    const selectedIdSet = new Set(selectedIdList);
+    const selectedMachines = data.filter((machine) =>
+      selectedIdSet.has(machine.id),
+    );
+    const vastCount = selectedMachines.filter(
+      (machine) => machine.provider === "vast-ai" && machine.instanceId,
+    ).length;
     const confirmed = window.confirm(
-      `Delete ${selectedIdList.length} selected SSH connection${
-        selectedIdList.length === 1 ? "" : "s"
-      }? This cannot be undone.`,
+      vastCount > 0
+        ? `Delete ${selectedIdList.length} selected SSH connection${
+            selectedIdList.length === 1 ? "" : "s"
+          } and destroy ${vastCount} Vast AI instance${
+            vastCount === 1 ? "" : "s"
+          }? This cannot be undone and will delete instance data.`
+        : `Delete ${selectedIdList.length} selected SSH connection${
+            selectedIdList.length === 1 ? "" : "s"
+          }? This cannot be undone.`,
     );
 
     if (!confirmed) {
@@ -1134,14 +1151,16 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
         throw new Error(payload.error ?? "Failed to delete SSH connections");
       }
 
+      const deletedIds = new Set<string>(
+        Array.isArray(payload.data?.ids) ? payload.data.ids : selectedIdList,
+      );
+
       setData((current) =>
-        sortActiveFirst(
-          current.filter((machine) => !deletingSet.has(machine.id)),
-        ),
+        sortActiveFirst(current.filter((machine) => !deletedIds.has(machine.id))),
       );
       setRowSelection({});
       setSelectedDetailsId((current) =>
-        current && deletingSet.has(current) ? null : current,
+        current && deletedIds.has(current) ? null : current,
       );
 
       toast.success(
@@ -1149,6 +1168,13 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
           (payload.data?.count ?? selectedIdList.length) === 1 ? "" : "s"
         }`,
       );
+      if (payload.data?.failures?.length) {
+        toast.warning(
+          `${payload.data.failures.length} connection${
+            payload.data.failures.length === 1 ? "" : "s"
+          } could not be deleted from Vast AI`,
+        );
+      }
       router.refresh();
     } catch (error) {
       toast.error(
@@ -1167,7 +1193,7 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
         return next;
       });
     }
-  }, [router, selectedIdList]);
+  }, [data, router, selectedIdList]);
 
   const handleEdit = React.useCallback(
     async (item: VirtualMachine, values: EditSSHValues) => {
