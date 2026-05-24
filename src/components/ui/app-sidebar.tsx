@@ -2,13 +2,9 @@
 
 import * as React from "react";
 import {
-  IconChartBar,
-  IconFolder,
   IconHelp,
   IconInnerShadowTop,
-  IconListDetails,
   IconSettings,
-  IconUsers,
 } from "@tabler/icons-react";
 
 import {
@@ -30,9 +26,9 @@ import { NavDocuments } from "./nav-document";
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "Almed Anwar",
+    email: "doanthienan54@gmail.com",
+    avatar: "/avata.jpg",
   },
   
 

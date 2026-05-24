@@ -32,6 +32,7 @@ import {
   IconLayoutColumns,
   IconPlus,
   IconServer,
+  IconTrash,
 } from "@tabler/icons-react";
 import {
   flexRender,
@@ -1099,6 +1100,75 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
     [router],
   );
 
+  const handleDeleteSelected = React.useCallback(async () => {
+    if (selectedIdList.length === 0) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete ${selectedIdList.length} selected SSH connection${
+        selectedIdList.length === 1 ? "" : "s"
+      }? This cannot be undone.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const deletingSet = new Set(selectedIdList);
+    setDeletingIds((current) => new Set([...current, ...deletingSet]));
+
+    try {
+      const response = await fetch("/api/ssh", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ids: selectedIdList,
+        }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error ?? "Failed to delete SSH connections");
+      }
+
+      setData((current) =>
+        sortActiveFirst(
+          current.filter((machine) => !deletingSet.has(machine.id)),
+        ),
+      );
+      setRowSelection({});
+      setSelectedDetailsId((current) =>
+        current && deletingSet.has(current) ? null : current,
+      );
+
+      toast.success(
+        `Deleted ${payload.data?.count ?? selectedIdList.length} connection${
+          (payload.data?.count ?? selectedIdList.length) === 1 ? "" : "s"
+        }`,
+      );
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete SSH connections",
+      );
+    } finally {
+      setDeletingIds((current) => {
+        const next = new Set(current);
+
+        for (const id of deletingSet) {
+          next.delete(id);
+        }
+
+        return next;
+      });
+    }
+  }, [router, selectedIdList]);
+
   const handleEdit = React.useCallback(
     async (item: VirtualMachine, values: EditSSHValues) => {
       const response = await fetch(`/api/ssh/${encodeURIComponent(item.id)}`, {
@@ -1584,15 +1654,30 @@ export function DataTable({ data: initialData }: { data: VirtualMachine[] }) {
             </Table>
           </DndContext>
         </div>
-        <div className="flex items-center justify-between px-4">
-          <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-            {
-              table
-                .getFilteredRowModel()
-                .rows.filter((row) => selectedIds.has(row.original.id)).length
-            }{" "}
-            of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
+        <div className="flex items-center justify-between gap-3 px-4">
+          <div className="flex flex-1 items-center gap-3 text-sm text-muted-foreground">
+            <span className="hidden lg:inline">
+              {
+                table
+                  .getFilteredRowModel()
+                  .rows.filter((row) => selectedIds.has(row.original.id))
+                  .length
+              }{" "}
+              of{" "}
+              {table.getFilteredRowModel().rows.length} row(s) selected.
+            </span>
+            {selectedIdList.length > 0 ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                disabled={selectedIdList.some((id) => deletingIds.has(id))}
+                onClick={handleDeleteSelected}
+              >
+                <IconTrash className="size-3.5" />
+                Delete
+              </Button>
+            ) : null}
           </div>
           <div className="flex w-full items-center gap-8 lg:w-fit">
             <div className="hidden items-center gap-2 lg:flex">

@@ -170,3 +170,83 @@ export async function POST(req: Request) {
     );
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const body = await req.json().catch(() => null);
+    const ids = Array.from(
+      new Set<string>(
+        Array.isArray(body?.ids)
+          ? body.ids
+              .filter((id: unknown): id is string => typeof id === "string")
+              .map((id: string) => id.trim())
+              .filter(Boolean)
+          : [],
+      ),
+    );
+
+    if (ids.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "No SSH connections selected",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const existingRemotes = await prisma.sSHRemote.findMany({
+      where: {
+        id: {
+          in: ids,
+        }
+      },
+      select: {
+        id: true,
+      },
+    });
+    const existingIds = existingRemotes.map((remote) => remote.id);
+
+    if (existingIds.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "SSH connections not found",
+        },
+        {
+          status: 404,
+        },
+      );
+    }
+
+    const deleted = await prisma.sSHRemote.deleteMany({
+      where: {
+        id: {
+          in: existingIds,
+        },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ids: existingIds,
+        count: deleted.count,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to delete SSH remotes", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to delete SSH connections",
+      },
+      {
+        status: 500,
+      },
+    );
+  }
+}
